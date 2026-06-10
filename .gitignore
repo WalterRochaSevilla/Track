@@ -1,0 +1,32 @@
+# Dependencias
+node_modules/
+
+# Archivos compilados de TypeScript
+build/
+dist/
+
+# Variables de entorno y secretos (¡NUNCA SUBIR ESTO A GIT!)
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Logs de npm o de la aplicación
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# Archivos del Sistema Operativo (Mac/Windows)
+.DS_Store
+Thumbs.db
+
+# Configuraciones de editores (VS Code, IntelliJ, etc.)
+.vscode/
+.idea/
+
+# Archivos de coverage de testing (si implementan evals automatizados luego)
+coverage/

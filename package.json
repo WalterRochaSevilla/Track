@@ -1,0 +1,26 @@
+{
+    "name": "mcp-server-cochatech",
+    "version": "1.0.0",
+    "description": "MCP Server modular para el Track MCPJam",
+    "main": "build/index.js",
+    "type": "module",
+    "scripts": {
+        "build": "tsc",
+        "watch": "tsc --watch",
+        "start": "node build/index.js",
+        "dev:inspector": "npm run build && npx -y @mcpjam/inspector@latest node build/index.js",
+        "generate:tool": "node scripts/generateTool.js"
+    },
+    "dependencies": {
+        "@modelcontextprotocol/sdk": "^1.0.1",
+        "zod": "^3.23.8",
+        "dotenv": "^16.4.5",
+        "pg": "^8.11.5",
+        "axios": "^1.6.8"
+    },
+    "devDependencies": {
+        "@types/node": "^20.12.7",
+        "@types/pg": "^8.11.5",
+        "typescript": "^5.4.5"
+    }
+}
