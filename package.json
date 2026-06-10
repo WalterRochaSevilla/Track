@@ -6,9 +6,8 @@
     "type": "module",
     "scripts": {
         "build": "tsc",
-        "watch": "tsc --watch",
         "start": "node build/index.js",
-        "dev:inspector": "npm run build && npx -y @mcpjam/inspector@latest node build/index.js",
+        "dev:inspector": "npm run build && npx -y @mcpjam/inspector@latest \"node build/index.js\"",
         "generate:tool": "node scripts/generateTool.js"
     },
     "dependencies": {
