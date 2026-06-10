@@ -85,7 +85,7 @@ export const ${toolExportName} = {
         
         // Siempre debemos retornar un objeto con el contenido en texto
         return {
-        content: [{ type: "text", text: JSON.stringify(resultado) }]
+        content: [{ type: "text" as const, text: JSON.stringify(resultado) }]
         };
     }
 };
