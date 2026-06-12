@@ -7,7 +7,7 @@
     "scripts": {
         "build": "tsc",
         "start": "node build/index.js",
-        "dev:inspector": "npm run build && npx -y @mcpjam/inspector@latest \"node build/index.js\"",
+        "dev:inspector": "npm run build && node -e \"const p = require('path'); require('child_process').execSync('npx -y @mcpjam/inspector@latest \\\"node ' + p.join(process.cwd(), 'build/index.js').split(p.sep).join('/') + '\\\"', {stdio: 'inherit'});\"",
         "generate:tool": "node scripts/generateTool.js"
     },
     "dependencies": {
