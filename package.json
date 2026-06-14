@@ -7,20 +7,32 @@
     "scripts": {
         "build": "tsc",
         "start": "node build/index.js",
+        "start:http": "node build/index.js",
+        "dev:http": "node --watch build/index.js",
         "dev:inspector": "npm run build && node -e \"const p = require('path'); require('child_process').execSync('npx -y @mcpjam/inspector@latest \\\"node ' + p.join(process.cwd(), 'build/index.js').split(p.sep).join('/') + '\\\"', {stdio: 'inherit'});\"",
         "generate:tool": "node scripts/generateTool.js"
     },
     "dependencies": {
-        "@types/node": "^20.12.7",
         "@modelcontextprotocol/sdk": "^1.0.1",
-        "zod": "^3.23.8",
+        "@types/node": "^20.12.7",
+        "axios": "^1.6.8",
+        "cors": "^2.8.6",
         "dotenv": "^16.4.5",
+        "express": "^5.2.1",
+        "jsonwebtoken": "^9.0.3",
+        "multer": "^2.1.1",
         "pg": "^8.11.5",
-        "axios": "^1.6.8"
+        "uuid": "^14.0.0",
+        "zod": "^3.23.8"
     },
     "devDependencies": {
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.6",
+        "@types/jsonwebtoken": "^9.0.10",
+        "@types/multer": "^2.1.0",
         "@types/node": "^20.12.7",
         "@types/pg": "^8.11.5",
+        "@types/uuid": "^10.0.0",
         "typescript": "^5.4.5"
     }
 }
