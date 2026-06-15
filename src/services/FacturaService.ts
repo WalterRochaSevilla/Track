@@ -1,0 +1,46 @@
+import { Factura } from "../database/entities/Factura.js";
+import { ExportarLCV } from "../use_cases/ExportarLCV.js";
+import { GenerarResumenIVA } from "../use_cases/GenerarResumenIVA.js";
+import { ListarFacturas } from "../use_cases/listar_facturas.js";
+import { RegistrarFactura } from "../use_cases/registrarFactura.js";
+import type { RegistrarFacturaInput } from "../schemas/registrarFactura.schema.js";
+import { createHash } from "node:crypto";
+export class FacturaService {
+  constructor(
+    private readonly registrarFacturaUseCase: RegistrarFactura,
+    private readonly listarFacturasUseCase: ListarFacturas,
+    private readonly generarResumenIVAUseCase: GenerarResumenIVA,
+    private readonly exportarLCVUseCase: ExportarLCV,
+  ) {}
+
+  private generateHash(factura: RegistrarFacturaInput) {
+    const payload = [
+      factura.nitEmisor,
+      factura.numeroFactura,
+      factura.fechaEmision,
+      factura.importeTotal,
+    ].join("|");
+    return createHash("sha256").update(payload).digest("hex");
+  }
+
+  registrar(input: RegistrarFacturaInput) {
+    const factura = Factura.create(input, this.generateHash(input));
+    return this.registrarFacturaUseCase.execute(factura);
+  }
+
+  listar(empresaId: string, fechaInicio: Date, fechaFin: Date) {
+    return this.listarFacturasUseCase.execute(empresaId, fechaInicio, fechaFin);
+  }
+
+  resumenIVA(empresaId: string, fechaInicio: Date, fechaFin: Date) {
+    return this.generarResumenIVAUseCase.execute(
+      empresaId,
+      fechaInicio,
+      fechaFin,
+    );
+  }
+
+  exportarLCV(empresaId: string, fechaInicio: Date, fechaFin: Date) {
+    return this.exportarLCVUseCase.execute(empresaId, fechaInicio, fechaFin);
+  }
+}

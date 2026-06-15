@@ -35,4 +35,38 @@
         "@types/uuid": "^10.0.0",
         "typescript": "^5.4.5"
     }
+  "name": "mcp-server-cochatech",
+  "version": "1.0.0",
+  "description": "MCP Server modular para el Track MCPJam",
+  "main": "build/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "generate-env": "tsx scripts/generateEnv.ts",
+    "prebuild": "npm run generate-env",
+    "start": "node build/index.js",
+    "dev:inspector": "npm run build && node -e \"const p = require('path'); require('child_process').execSync('npx -y @mcpjam/inspector@latest \\\"node ' + p.join(process.cwd(), 'build/index.js').split(p.sep).join('/') + '\\\"', {stdio: 'inherit'});\"",
+    "generate:tool": "node scripts/generateTool.js",
+    "dev:mcp-inspector": "npx -y @mcpjam/inspector@latest node $(pwd)/build/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.1",
+    "@types/node": "^20.12.7",
+    "axios": "^1.6.8",
+    "dotenv": "^16.6.1",
+    "drizzle-orm": "^0.45.2",
+    "json-2-csv": "^5.5.11",
+    "pg": "^8.11.5",
+    "postgres": "^3.4.9",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "@types/pg": "^8.11.5",
+    "drizzle-kit": "^0.31.10",
+    "typescript": "^5.4.5"
+  },
+  "overrides": {
+    "esbuild": "^0.28.1"
+  }
 }

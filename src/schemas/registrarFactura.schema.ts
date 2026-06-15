@@ -1,0 +1,20 @@
+import { z } from "zod";
+
+export const registrarFacturaSchema = {
+  empresaId: z.uuid(),
+  tipo: z.enum(["compra", "venta"]),
+  nitEmisor: z.string(),
+  razonSocialEmisor: z.string(),
+  numeroFactura: z.string(),
+  numeroAutorizacion: z.string().nullable(),
+  fechaEmision: z.string(),
+  nitComprador: z.string().nullable(),
+  importeTotal: z.number(),
+  descuentos: z.number(),
+  importeBaseCreditoFiscal: z.number(),
+};
+
+// 🌟 PARA EL TYPE: Envolvemos el objeto plano dentro de z.object para inferir el tipo sin romper la exportación
+export type RegistrarFacturaInput = z.infer<
+  z.ZodObject<typeof registrarFacturaSchema>
+>;

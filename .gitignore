@@ -6,6 +6,9 @@ build/
 dist/
 
 # Variables de entorno y secretos (¡NUNCA SUBIR ESTO A GIT!)
+
+src/config/environments*
+
 .env
 .env.local
 .env.development
