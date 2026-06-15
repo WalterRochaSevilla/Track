@@ -1,6 +1,7 @@
 // src/middleware/auth.ts
-import jwt from 'jsonwebtoken';
-import type { Request, Response, NextFunction } from 'express';
+import jwt from "jsonwebtoken";
+import type { Request, Response, NextFunction } from "express";
+import { ENV } from "../config/environments.js";
 
 // Augment the Express Request type so TypeScript knows req.empresaId exists.
 declare global {
@@ -20,35 +21,40 @@ interface JwtPayload {
 export function authMiddleware(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): void {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader?.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Missing or malformed Authorization header' });
+  if (!authHeader?.startsWith("Bearer ")) {
+    res
+      .status(401)
+      .json({ error: "Missing or malformed Authorization header" });
     return;
   }
 
   const token = authHeader.slice(7);
 
   try {
-    const secret = process.env.JWT_SECRET;
+    const secret = ENV.JWT_SECRET;
     if (!secret) {
-      res.status(500).json({ error: 'Server misconfiguration: JWT_SECRET not set' });
+      res
+        .status(500)
+        .json({ error: "Server misconfiguration: JWT_SECRET not set" });
       return;
     }
 
     const payload = jwt.verify(token, secret) as JwtPayload;
 
     if (!payload.empresaId) {
-      res.status(401).json({ error: 'Token missing required empresaId claim' });
+      res.status(401).json({ error: "Token missing required empresaId claim" });
       return;
     }
 
     req.empresaId = payload.empresaId;
     next();
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Invalid token';
+    const message = err instanceof Error ? err.message : "Invalid token";
     res.status(401).json({ error: message });
   }
 }
+

@@ -1,61 +1,58 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import fs from "fs/promises";
-import path from "path";
-import { fileURLToPath } from "url";
+// src/index.ts  ← REWRITTEN: HTTP entry point replacing StdioServerTransport
 import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import { mkdir } from "fs/promises";
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { tenantStorage } from "./lib/tenant.js";
+import { authMiddleware } from "./middleware/auth.js";
+import { uploadRouter } from "./routes/upload.js";
+import { apiRouter } from "./routes/api.js";
+import { createMcpServer } from "./server.js";
+import { ENV } from "./config/environments.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const server = new McpServer({
-  name: "Cochatech-Server",
-  version: "1.0.0",
+// Ensure upload directory exists on startup
+const uploadDir = ENV.UPLOAD_DIR ?? "./uploads";
+await mkdir(uploadDir, { recursive: true });
+
+// ── MCP endpoint ─────────────────────────────────────────────────────────────
+// Stateless: one McpServer per request. empresaId is isolated per request via
+// AsyncLocalStorage so Track B services can read it without signature changes.
+app.post("/mcp", authMiddleware, async (req, res) => {
+  try {
+    await tenantStorage.run({ empresaId: req.empresaId }, async () => {
+      const server = await createMcpServer();
+      const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: undefined,
+      });
+      await server.connect(transport);
+      await transport.handleRequest(req, res, req.body);
+    });
+  } catch (err) {
+    if (!res.headersSent) {
+      const message = err instanceof Error ? err.message : "MCP internal error";
+      res.status(500).json({ error: message });
+    }
+  }
 });
 
-// 🚀 LA MAGIA: Función que lee la carpeta y auto-registra las tools
-async function loadTools() {
-  const toolsPath = path.join(__dirname, "tools");
+// ── Upload ────────────────────────────────────────────────────────────────────
+app.use("/upload", uploadRouter);
 
-  try {
-    const files = await fs.readdir(toolsPath);
+// ── REST API for frontend (reuses Track B services) ──────────────────────────
+app.use("/api", apiRouter);
 
-    for (const file of files) {
-      // Solo importamos archivos JS (que son los TS ya compilados)
-      if (file.endsWith(".js")) {
-        const toolModule = await import(`./tools/${file}`);
+// ── Health ────────────────────────────────────────────────────────────────────
+app.get("/health", (_req, res) =>
+  res.json({ status: "ok", ts: new Date().toISOString() }),
+);
 
-        // Buscamos la exportación dentro del archivo
-        for (const key in toolModule) {
-          const tool = toolModule[key];
-
-          // Verificamos que tenga la estructura de una Tool válida
-          if (tool && tool.name && tool.handler && tool.schema) {
-            server.tool(tool.name, tool.description, tool.schema, tool.handler);
-            console.error(
-              `[Loader] ✅ Herramienta auto-registrada: ${tool.name}`,
-            );
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.error(
-      "[Loader] ⚠️ No se pudieron cargar las herramientas o la carpeta está vacía.",
-      error,
-    );
-  }
-}
-
-// Inicialización del servidor
-async function main() {
-  await loadTools(); // Cargamos las tools antes de abrir el puerto
-
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("🚀 Servidor base iniciado. Entorno listo para trabajar.");
-}
-
-main();
-
+// ── Start ─────────────────────────────────────────────────────────────────────
+const PORT = Number(ENV.PORT ?? 3000);
+app.listen(PORT, () =>
+  console.log(`[Cochatech-Server] HTTP MCP server listening on port ${PORT}`),
+);

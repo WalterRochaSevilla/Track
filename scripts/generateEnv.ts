@@ -24,6 +24,9 @@ const envContent = `// ⚠️ ARCHIVO GENERADO AUTOMÁTICAMENTE POR EL SCRIPT DE
 export const ENV = {
   DATABASE_URL: "${process.env.DATABASE_URL || ""}",
   ENVIRONMENT: "${process.env.ENVIRONMENT || "prod"}",
+  JWT_SECRET: "${process.env.JWT_SECRET || ""}",
+  UPLOAD_DIR: "${process.env.UPLOAD_DIR || ""}",
+  PORT: "${process.env.PORT || 300}"
 };
 `;
 
