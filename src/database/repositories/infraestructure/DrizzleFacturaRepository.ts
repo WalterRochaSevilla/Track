@@ -18,7 +18,7 @@ export class DrizzleFacturaRepository implements IFacturaRepository {
       row.razonSocialEmisor,
       row.numeroFactura,
       row.numeroAutorizacion,
-      row.fechaEmision,
+      row.fechaEmision.toLocaleDateString(),
       row.nitComprador,
       Number(row.importeTotal),
       Number(row.descuentos),
@@ -38,7 +38,7 @@ export class DrizzleFacturaRepository implements IFacturaRepository {
       numeroFactura: factura.numeroFactura,
       numeroAutorizacion: factura.numeroAutorizacion,
       nitComprador: factura.nitComprador,
-      fechaEmision: factura.fechaEmision,
+      fechaEmision: new Date(factura.fechaEmision),
       importeTotal: factura.importeTotal.toString(),
       baseCreditoFiscal: factura.importeBaseCreditoFiscal.toString(),
       descuentos: factura.descuentos.toString(),
@@ -73,8 +73,8 @@ export class DrizzleFacturaRepository implements IFacturaRepository {
           eq(facturaSchema.empresaId, empresaId),
           between(
             facturaSchema.fechaEmision,
-            fechaInicio.toString(),
-            fechaFin.toString(),
+            fechaInicio,
+            fechaFin,
           ),
         ),
       );

@@ -1,14 +1,16 @@
 import { facturaService } from "../bootstrap/factura.js";
-import { registrarFacturaSchema } from "../schemas/registrarFactura.schema.js";
-import type { RegistrarFacturaInput } from "../schemas/registrarFactura.schema.js";
+import {
+  ListarFacturasInput,
+  listarFacturasSchema,
+} from "../schemas/listarFacturas.schema.js";
 
-const registrarFacturaTool = {
-  name: "registrarFactura",
-  description: "Registra una factura en el sistema.",
-  schema: registrarFacturaSchema,
-  handler: async (input: RegistrarFacturaInput) => {
+const listarFacturasTool = {
+  name: "Listar_Facturas",
+  description: "Lista Facturas durante un periodo de tiempo",
+  schema: listarFacturasSchema,
+  handler: async (input: ListarFacturasInput) => {
     try {
-      const resultado = await facturaService.registrar(input);
+      const resultado = await facturaService.listar(input);
 
       return {
         content: [
@@ -34,4 +36,4 @@ const registrarFacturaTool = {
   },
 };
 
-export default registrarFacturaTool;
+export default listarFacturasTool;

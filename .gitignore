@@ -8,6 +8,8 @@ dist/
 # Variables de entorno y secretos (¡NUNCA SUBIR ESTO A GIT!)
 
 src/config/environments*
+src/database/migrations
+src/database/migrations/*
 
 .env
 .env.local

@@ -3,8 +3,8 @@ import {
   uuid,
   text,
   numeric,
-  date,
   uniqueIndex,
+  timestamp,
 } from "drizzle-orm/pg-core";
 
 import { empresaSchema } from "./empresa.js";
@@ -28,7 +28,7 @@ export const facturaSchema = pgTable(
 
     numeroAutorizacion: text("numero_autorizacion"),
 
-    fechaEmision: date("fecha_emision").notNull(),
+    fechaEmision: timestamp("fecha_emision", { withTimezone: true }).notNull(),
 
     nitComprador: text("nit_comprador"),
 
