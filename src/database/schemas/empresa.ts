@@ -5,7 +5,7 @@ export const empresaSchema = pgTable(
   {
     id: uuid("id").defaultRandom().primaryKey(),
 
-    nit: text("nit").notNull(),
+    nit: text("nit").notNull().unique(),
 
     razonSocial: text("razon_social").notNull(),
   },

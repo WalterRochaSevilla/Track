@@ -5,6 +5,7 @@ import { ListarFacturas } from "../use_cases/listar_facturas.js";
 import { RegistrarFactura } from "../use_cases/registrarFactura.js";
 import type { RegistrarFacturaInput } from "../schemas/registrarFactura.schema.js";
 import { createHash } from "node:crypto";
+import { ListarFacturasInput } from "../schemas/listarFacturas.schema.js";
 export class FacturaService {
   constructor(
     private readonly registrarFacturaUseCase: RegistrarFactura,
@@ -28,15 +29,19 @@ export class FacturaService {
     return this.registrarFacturaUseCase.execute(factura);
   }
 
-  listar(empresaId: string, fechaInicio: Date, fechaFin: Date) {
-    return this.listarFacturasUseCase.execute(empresaId, fechaInicio, fechaFin);
+  listar(input: ListarFacturasInput) {
+    return this.listarFacturasUseCase.execute(
+      input.empresaId,
+      new Date(input.fechaInicio),
+      new Date(input.fechaFin),
+    );
   }
 
-  resumenIVA(empresaId: string, fechaInicio: Date, fechaFin: Date) {
+  resumenIVA(input: ListarFacturasInput) {
     return this.generarResumenIVAUseCase.execute(
-      empresaId,
-      fechaInicio,
-      fechaFin,
+      input.empresaId,
+      new Date(input.fechaInicio),
+      new Date(input.fechaFin),
     );
   }
 
