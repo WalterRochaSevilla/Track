@@ -14,7 +14,8 @@
     "dev:inspector": "npm run build && node -e \"const p = require('path'); require('child_process').execSync('npx -y @mcpjam/inspector@latest \\\"node ' + p.join(process.cwd(), 'build/index.js').split(p.sep).join('/') + '\\\"', {stdio: 'inherit'});\"",
     "dev:mcp-inspector": "npx -y @mcpjam/inspector@latest node $(pwd)/build/server.js",
     "generate:tool": "node scripts/generateTool.js",
-    "evals": "tsx scripts/runEvals.ts"
+    "evals": "tsx scripts/runEvals.ts",
+    "evals:real": "tsx scripts/runEvalsReal.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.1",

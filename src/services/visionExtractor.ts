@@ -7,10 +7,20 @@ import { Factura } from "../database/entities/Factura.js";
 export interface FacturaExtraida {
   campos: Partial<Factura>;
   confianza: Record<string, number>;
+  metadatos: {
+    modalidadFacturacion: string;
+    codigoControl: string | null;
+    cuf: string | null;
+    actividadEconomica: string | null;
+    leyenda: string | null;
+    lugarEmision: string | null;
+    literalTotal: string | null;
+  };
 }
 
 /**
  * Service to extract invoice data from an image file using Gemini 1.5 Flash.
+ * Optimized for Bolivian tax invoices (SIN / SIAT) with structured JSON output.
  */
 export class VisionExtractor {
   private readonly apiKey: string;
@@ -42,15 +52,28 @@ export class VisionExtractor {
 
     const base64Data = fileBuffer.toString("base64");
 
-    // 2. Prepare the payload for Gemini API
+    // 2. Prepare the payload for Gemini API with an expert-level prompt
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`;
 
-    const prompt = `Analiza la imagen de la factura boliviana adjunta y extrae todos los campos contables requeridos.
-    Determina si es una compra o una venta:
-    - Si es de compras (es decir, una factura de gastos recibida por la empresa), pon 'compra'.
-    - Si es de ventas (emitida por la propia empresa), pon 'venta'.
-    Identifica cada campo con cuidado y evalúa de manera realista la nitidez y legibilidad de cada dato para asignar un valor de confianza de 0.0 a 1.0 (donde 1.0 es legible al 100% y 0.0 es ilegible o inexistente).
-    Asegúrate de extraer la fecha de emisión en formato YYYY-MM-DD. Si no hay descuentos visibles, pon 0.`;
+    const prompt = `Eres un sistema experto de OCR contable especializado en facturas del Estado Plurinacional de Bolivia, reguladas por el Servicio de Impuestos Nacionales (SIN) bajo la modalidad de Facturación en Línea (Ley 843 y RND 102100000011).
+
+ANALIZA la imagen de la factura adjunta y extrae TODOS los campos con la máxima precisión.
+
+INSTRUCCIONES CRÍTICAS:
+1. TIPO DE FACTURA: Determina si es una factura de COMPRA (gasto recibido por la empresa, la empresa es el comprador) o VENTA (emitida por la empresa, la empresa es el vendedor). Si no se puede determinar con certeza, usa 'compra' como valor por defecto.
+2. NIT: Los NITs bolivianos son numéricos de 7 a 13 dígitos. Extrae cada dígito con cuidado. No confundas 0 con O, 1 con l, 8 con B.
+3. CUF vs CÓDIGO DE CONTROL: Las facturas electrónicas tienen CUF (largo, alfanumérico). Las facturas antiguas tienen Código de Control (formato XX-XX-XX-XX). Diferencia ambos.
+4. IMPORTES: Usa puntos para miles y coma para decimales en Bolivia (ej: 1.234,50). Sin embargo, devuelve los valores como NÚMEROS sin formato (ej: 1234.50).
+5. FECHA: Extrae en formato YYYY-MM-DD estricto.
+6. Si el NIT del comprador dice "S/N", "Sin Nombre", "0" o está vacío, devuelve "0".
+7. DESCUENTOS: Si no aparecen descuentos visibles, devuelve 0.
+8. BASE CRÉDITO FISCAL: En facturas bolivianas normalmente coincide con el importe total (menos descuentos). Si no se ve explícitamente, calcula Total - Descuentos.
+9. CONFIANZA: Evalúa de forma REALISTA y HONESTA la legibilidad de cada campo en la imagen:
+   - 1.0 = texto perfectamente legible, sin ambigüedad
+   - 0.8-0.9 = legible con alta certeza pero podría haber leve degradación
+   - 0.5-0.7 = parcialmente legible, hay ambigüedad en algunos caracteres
+   - 0.0-0.4 = muy difícil de leer o el campo no está presente
+10. METADATOS ADICIONALES: Extrae información contextual como la modalidad de facturación, actividad económica, leyenda fiscal, lugar de emisión y el total literal si están visibles.`;
 
     const responseSchema = {
       type: "OBJECT",
@@ -61,43 +84,43 @@ export class VisionExtractor {
             tipo: {
               type: "STRING",
               enum: ["compra", "venta"],
-              description: "tipo de factura: 'compra' (recibida) o 'venta' (emitida)"
+              description: "Tipo: 'compra' si la empresa recibe la factura, 'venta' si la empresa emite."
             },
             nitEmisor: {
               type: "STRING",
-              description: "NIT del emisor de la factura"
+              description: "NIT del emisor (razón social que emitió la factura). Solo dígitos."
             },
             razonSocialEmisor: {
               type: "STRING",
-              description: "Razón social o nombre del emisor"
+              description: "Razón social completa del emisor de la factura."
             },
             numeroFactura: {
               type: "STRING",
-              description: "Número de factura"
+              description: "Número de factura impreso en el documento."
             },
             numeroAutorizacion: {
               type: "STRING",
-              description: "Número de autorización o CUF"
+              description: "Número de autorización de la factura (SIN). Si es electrónica, puede ser parte del CUF."
             },
             fechaEmision: {
               type: "STRING",
-              description: "Fecha de emisión en formato YYYY-MM-DD"
+              description: "Fecha de emisión en formato YYYY-MM-DD."
             },
             nitComprador: {
               type: "STRING",
-              description: "NIT del comprador/cliente"
+              description: "NIT del comprador/cliente. Si dice S/N o no tiene, devolver '0'."
             },
             importeTotal: {
               type: "NUMBER",
-              description: "Importe total facturado"
+              description: "Importe total facturado en bolivianos (Bs)."
             },
             descuentos: {
               type: "NUMBER",
-              description: "Descuentos, rebajas o bonificaciones"
+              description: "Descuentos, rebajas y/o bonificaciones sujetas al IVA."
             },
             importeBaseCreditoFiscal: {
               type: "NUMBER",
-              description: "Importe base para el IVA / crédito fiscal"
+              description: "Importe base para crédito fiscal (IVA 13%). Generalmente = Total - Descuentos."
             }
           },
           required: [
@@ -115,31 +138,59 @@ export class VisionExtractor {
         confianza: {
           type: "OBJECT",
           properties: {
-            tipo: { type: "NUMBER", description: "Confianza en la detección del tipo (0.0 a 1.0)" },
-            nitEmisor: { type: "NUMBER", description: "Confianza en la detección del NIT del emisor (0.0 a 1.0)" },
-            razonSocialEmisor: { type: "NUMBER", description: "Confianza en la detección de la razón social (0.0 a 1.0)" },
-            numeroFactura: { type: "NUMBER", description: "Confianza en la detección del número de factura (0.0 a 1.0)" },
-            numeroAutorizacion: { type: "NUMBER", description: "Confianza en la detección del número de autorización/CUF (0.0 a 1.0)" },
-            fechaEmision: { type: "NUMBER", description: "Confianza en la detección de la fecha de emisión (0.0 a 1.0)" },
-            nitComprador: { type: "NUMBER", description: "Confianza en la detección del NIT del comprador (0.0 a 1.0)" },
-            importeTotal: { type: "NUMBER", description: "Confianza en la detección del importe total (0.0 a 1.0)" },
-            descuentos: { type: "NUMBER", description: "Confianza en la detección del descuento (0.0 a 1.0)" },
-            importeBaseCreditoFiscal: { type: "NUMBER", description: "Confianza en la detección de la base imponible (0.0 a 1.0)" }
+            tipo: { type: "NUMBER", description: "Confianza de 0.0 a 1.0 en la clasificación compra/venta." },
+            nitEmisor: { type: "NUMBER", description: "Confianza en la lectura del NIT del emisor." },
+            razonSocialEmisor: { type: "NUMBER", description: "Confianza en la razón social del emisor." },
+            numeroFactura: { type: "NUMBER", description: "Confianza en el número de factura." },
+            numeroAutorizacion: { type: "NUMBER", description: "Confianza en el número de autorización/CUF." },
+            fechaEmision: { type: "NUMBER", description: "Confianza en la fecha de emisión." },
+            nitComprador: { type: "NUMBER", description: "Confianza en el NIT del comprador." },
+            importeTotal: { type: "NUMBER", description: "Confianza en el importe total." },
+            descuentos: { type: "NUMBER", description: "Confianza en los descuentos." },
+            importeBaseCreditoFiscal: { type: "NUMBER", description: "Confianza en la base de crédito fiscal." }
           },
           required: [
-            "tipo",
-            "nitEmisor",
-            "razonSocialEmisor",
-            "numeroFactura",
-            "fechaEmision",
-            "nitComprador",
-            "importeTotal",
-            "descuentos",
+            "tipo", "nitEmisor", "razonSocialEmisor", "numeroFactura",
+            "fechaEmision", "nitComprador", "importeTotal", "descuentos",
             "importeBaseCreditoFiscal"
           ]
+        },
+        metadatos: {
+          type: "OBJECT",
+          properties: {
+            modalidadFacturacion: {
+              type: "STRING",
+              description: "Modalidad: 'Facturación en Línea', 'Facturación Computarizada', 'Facturación Manual', 'Facturación Electrónica' u 'Desconocida'."
+            },
+            codigoControl: {
+              type: "STRING",
+              description: "Código de control (si existe, formato XX-XX-XX-XX). Null si no aplica."
+            },
+            cuf: {
+              type: "STRING",
+              description: "Código Único de Facturación (CUF) si es factura electrónica en línea. Null si no existe."
+            },
+            actividadEconomica: {
+              type: "STRING",
+              description: "Actividad económica del emisor, si está visible. Null si no se ve."
+            },
+            leyenda: {
+              type: "STRING",
+              description: "Leyenda fiscal obligatoria de la factura. Null si no se lee."
+            },
+            lugarEmision: {
+              type: "STRING",
+              description: "Ciudad o lugar de emisión de la factura. Null si no aparece."
+            },
+            literalTotal: {
+              type: "STRING",
+              description: "El importe total expresado en letras (literal). Null si no está visible."
+            }
+          },
+          required: ["modalidadFacturacion"]
         }
       },
-      required: ["campos", "confianza"]
+      required: ["campos", "confianza", "metadatos"]
     };
 
     const payload = {
@@ -168,9 +219,8 @@ export class VisionExtractor {
     // 3. Perform the request
     try {
       const response = await axios.post(url, payload, {
-        headers: {
-          "Content-Type": "application/json"
-        }
+        headers: { "Content-Type": "application/json" },
+        timeout: 30000 // 30s timeout
       });
 
       const textOutput = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -180,6 +230,20 @@ export class VisionExtractor {
 
       // 4. Parse the structured JSON response
       const extractedData = JSON.parse(textOutput) as FacturaExtraida;
+
+      // 5. Post-processing: ensure metadatos defaults
+      if (!extractedData.metadatos) {
+        extractedData.metadatos = {
+          modalidadFacturacion: "Desconocida",
+          codigoControl: null,
+          cuf: null,
+          actividadEconomica: null,
+          leyenda: null,
+          lugarEmision: null,
+          literalTotal: null,
+        };
+      }
+
       return extractedData;
     } catch (err: any) {
       const errorDetail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
