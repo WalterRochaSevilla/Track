@@ -1,4 +1,4 @@
-import { buscarFarmaciaSchema } from "../schemas/buscarFarmacia.js";
+/*import { buscarFarmaciaSchema } from "../schemas/buscarFarmacia.js";
 import { ejecutarBuscarFarmacia } from "../services/buscarFarmacia.js";
 
 export const buscarFarmaciaTool = {
@@ -14,4 +14,4 @@ export const buscarFarmaciaTool = {
         content: [{ type: "text" as const, text: JSON.stringify(resultado) }]
         };
     }
-};
+};*/
