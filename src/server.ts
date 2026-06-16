@@ -3,15 +3,11 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { readdir } from "fs/promises";
-import { ENV } from "./config/environments.js"; // 🌟 Tu orquestador de entornos seguro
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-/**
- * 🚀 LA MAGIA: Función que lee de forma dinámica la carpeta 'tools'
- * y auto-registra las herramientas en la instancia pasada del servidor.
- */
 async function loadTools(server: McpServer): Promise<void> {
   const toolsPath = join(__dirname, "tools");
 
@@ -27,7 +23,6 @@ async function loadTools(server: McpServer): Promise<void> {
         for (const key in toolModule) {
           const tool = toolModule[key];
 
-          // Verificamos que cumpla estrictamente con el contrato del Onboarding
           if (tool && tool.name && tool.handler && tool.schema) {
             server.tool(
               tool.name,
@@ -60,7 +55,6 @@ export async function createMcpServer(): Promise<McpServer> {
     version: "1.0.0",
   });
 
-  // Registramos todas las herramientas de forma dinámica antes de retornar la instancia
   await loadTools(server);
   return server;
 }
@@ -70,20 +64,16 @@ export async function createMcpServer(): Promise<McpServer> {
  * Esto mantendrá la compatibilidad absoluta con mcpjam inspector.
  */
 async function main() {
-  // Confirmamos que el entorno inyectado esté disponible al arrancar
-  if (ENV.ENVIRONMENT === "dev") {
+
     console.error("🔌 [Server] Modo de desarrollo activo.");
   }
 
-  // Instanciamos el servidor con sus herramientas ya cargadas
-  const server = await createMcpServer();
+  const server = await createMcPpServer();
 
-  // Conectamos mediante el transporte por defecto (consola)
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("🚀 Servidor base iniciado. Entorno listo para trabajar.");
 }
 
-// Ejecutamos el punto de entrada si este archivo es lanzado directamente por Node
 main();
 
