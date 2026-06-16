@@ -27,7 +27,12 @@ export const ENV = {
   JWT_SECRET: "${process.env.JWT_SECRET || ""}",
   UPLOAD_DIR: "${process.env.UPLOAD_DIR || ""}",
   PORT: "${process.env.PORT || 3000}",
+<<<<<<< HEAD
   GEMINI_API_KEY: "${process.env.GEMINI_API_KEY || ""}"
+=======
+  GEMINI_API_KEY: "${process.env.GEMINI_API_KEY || ""}",
+  GEMINI_MODEL: "${process.env.GEMINI_MODEL || "gemini-2.0-flash"}"
+>>>>>>> origin/vision_and_validation_invoice
 };
 
 `;

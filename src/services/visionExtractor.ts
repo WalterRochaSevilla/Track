@@ -43,6 +43,10 @@ export class VisionExtractor {
     }
 
     // 1. Read file and encode to base64
+    // Asegurarse de que filePath sea una ruta absoluta y segura antes de leer.
+    // La validación de path traversal se realiza en el router (api.ts) antes de llamar a este servicio.
+    // Aquí solo nos aseguramos de que el archivo exista y sea accesible.
+
     let fileBuffer: Buffer;
     try {
       fileBuffer = await fs.readFile(filePath);

@@ -4,8 +4,9 @@ import multer from 'multer';
 import path from 'path';
 import { authMiddleware } from '../middleware/auth.js';
 import { saveUpload } from '../services/uploadService.js';
+import { ENV } from '../config/environments.js';
 
-const uploadDir = process.env.UPLOAD_DIR ?? './uploads';
+const uploadDir = ENV.UPLOAD_DIR || './uploads';
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadDir),

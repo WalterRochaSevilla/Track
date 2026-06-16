@@ -12,7 +12,7 @@ import { VisionExtractor } from "../services/visionExtractor.js";
 import { validarFactura } from "../services/validarFactura.js";
 import { db } from "../database/db.js";
 import { uploadsSchema } from "../database/schemas/uploads.js";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 const visionExtractor = new VisionExtractor();
 
@@ -121,10 +121,16 @@ apiRouter.post("/analizar-scan", async (req: Request, res: Response) => {
 
     if (docId) {
       // Resolve from database upload record
+      // Seguridad: Filtramos por docId Y empresaId para evitar acceso no autorizado
       const records = await db
         .select()
         .from(uploadsSchema)
-        .where(eq(uploadsSchema.docId, String(docId)))
+        .where(
+          and(
+            eq(uploadsSchema.docId, String(docId)),
+            eq(uploadsSchema.empresaId, req.empresaId!)
+          )
+        )
         .limit(1);
 
       if (!records || records.length === 0) {
