@@ -11,7 +11,7 @@
     "start": "node build/index.js",
     "start:http": "node build/index.js",
     "dev:http": "node --watch build/index.js",
-    "dev:inspector": "npm run build && node -e \"const p = require('path'); require('child_process').execSync('npx -y @mcpjam/inspector@latest \\\"node ' + p.join(process.cwd(), 'build/index.js').split(p.sep).join('/') + '\\\"', {stdio: 'inherit'});\"",
+    "dev:inspector": "npm run build && node -e \"const p = require('path'); require('child_process').execSync('npx -y @mcpjam/inspector@latest \\\"node ' + p.join(process.cwd(), 'build/server.js').split(p.sep).join('/') + '\\\"', {stdio: 'inherit'});\"",
     "dev:mcp-inspector": "npx -y @mcpjam/inspector@latest node $(pwd)/build/server.js",
     "generate:tool": "node scripts/generateTool.js",
     "evals": "tsx scripts/runEvals.ts",

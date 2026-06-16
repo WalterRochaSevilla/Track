@@ -53,7 +53,7 @@ export class VisionExtractor {
     const base64Data = fileBuffer.toString("base64");
 
     // 2. Prepare the payload for Gemini API with an expert-level prompt
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${this.apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`;
 
     const prompt = `Eres un sistema experto de OCR contable especializado en facturas del Estado Plurinacional de Bolivia, reguladas por el Servicio de Impuestos Nacionales (SIN) bajo la modalidad de Facturación en Línea (Ley 843 y RND 102100000011).
 
@@ -216,38 +216,62 @@ INSTRUCCIONES CRÍTICAS:
       }
     };
 
-    // 3. Perform the request
-    try {
-      const response = await axios.post(url, payload, {
-        headers: { "Content-Type": "application/json" },
-        timeout: 30000 // 30s timeout
-      });
+    // 3. Perform the request with retry logic for 429 rate limits
+    let attempts = 0;
+    const maxAttempts = 5;
+    let delay = 5000;
 
-      const textOutput = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!textOutput) {
-        throw new Error("Gemini retornó una respuesta vacía o sin contenido.");
+    while (attempts < maxAttempts) {
+      try {
+        const response = await axios.post(url, payload, {
+          headers: { "Content-Type": "application/json" },
+          timeout: 45000
+        });
+
+        const textOutput = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!textOutput) {
+          throw new Error("Gemini retornó una respuesta vacía o sin contenido.");
+        }
+
+        const extractedData = JSON.parse(textOutput) as FacturaExtraida;
+
+        if (!extractedData.metadatos) {
+          extractedData.metadatos = {
+            modalidadFacturacion: "Desconocida",
+            codigoControl: null,
+            cuf: null,
+            actividadEconomica: null,
+            leyenda: null,
+            lugarEmision: null,
+            literalTotal: null,
+          };
+        }
+
+        return extractedData;
+      } catch (err: any) {
+        attempts++;
+        const isTransient = err.response?.status === 429 || err.response?.status === 503 || err.message?.includes("429") || err.message?.includes("503");
+        if (isTransient && attempts < maxAttempts) {
+          let waitTime = delay;
+          const retryDelayStr = err.response?.data?.error?.details?.find(
+            (d: any) => d["@type"] === "type.googleapis.com/google.rpc.RetryInfo"
+          )?.retryDelay;
+          if (retryDelayStr) {
+            const parsedSeconds = parseInt(retryDelayStr);
+            if (!isNaN(parsedSeconds)) {
+              waitTime = (parsedSeconds + 2) * 1000;
+            }
+          }
+          console.warn(`⚠️ [Gemini API] Transient error (${err.response?.status || 'network'}). Retrying attempt ${attempts}/${maxAttempts} in ${waitTime / 1000}s...`);
+          await new Promise((resolve) => setTimeout(resolve, waitTime));
+          delay *= 2;
+          continue;
+        }
+
+        const errorDetail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
+        throw new Error(`Fallo en la llamada a Gemini API: ${errorDetail}`);
       }
-
-      // 4. Parse the structured JSON response
-      const extractedData = JSON.parse(textOutput) as FacturaExtraida;
-
-      // 5. Post-processing: ensure metadatos defaults
-      if (!extractedData.metadatos) {
-        extractedData.metadatos = {
-          modalidadFacturacion: "Desconocida",
-          codigoControl: null,
-          cuf: null,
-          actividadEconomica: null,
-          leyenda: null,
-          lugarEmision: null,
-          literalTotal: null,
-        };
-      }
-
-      return extractedData;
-    } catch (err: any) {
-      const errorDetail = err.response?.data ? JSON.stringify(err.response.data) : err.message;
-      throw new Error(`Fallo en la llamada a Gemini API: ${errorDetail}`);
     }
+    throw new Error("Fallo en la llamada a Gemini API: Máximo de reintentos alcanzado por límite de cuota (429).");
   }
 }

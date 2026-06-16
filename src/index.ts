@@ -12,7 +12,12 @@ import { createMcpServer } from "./server.js";
 import { ENV } from "./config/environments.js";
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  // En producción, solo permitimos nuestra URL oficial. En dev, permitimos todo para pruebas.
+  origin: ENV.ENVIRONMENT === "dev" 
+    ? "*" 
+    : ["https://facturalista.app"] // Cámbialo por tu dominio final si lo tienes
+}));
 app.use(express.json());
 
 // Ensure upload directory exists on startup
@@ -40,11 +45,33 @@ app.post("/mcp", authMiddleware, async (req, res) => {
   }
 });
 
+import jwt from "jsonwebtoken";
+
+// ── Dev Token Endpoint (SOLO en entorno dev) ─────────────────────────────────
+if (ENV.ENVIRONMENT === "dev") {
+  app.get("/auth/dev-token", (_req, res) => {
+    try {
+      const secret = ENV.JWT_SECRET;
+      if (!secret) {
+        res.status(500).json({ error: "JWT_SECRET no configurado en el servidor." });
+        return;
+      }
+      const token = jwt.sign({ empresaId: "empresa-test-01" }, secret, { expiresIn: "8h" });
+      res.json({ token });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+}
+
 // ── Upload ────────────────────────────────────────────────────────────────────
 app.use("/upload", uploadRouter);
 
 // ── REST API for frontend (reuses Track B services) ──────────────────────────
 app.use("/api", apiRouter);
+
+// ── Static Files ──────────────────────────────────────────────────────────────
+app.use(express.static("public"));
 
 // ── Health ────────────────────────────────────────────────────────────────────
 app.get("/health", (_req, res) =>

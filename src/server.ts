@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { fileURLToPath, pathToFileURL } from "url";
+import { dirname, join, resolve } from "path";
 import { readdir } from "fs/promises";
 import { ENV } from "./config/environments.js"; // 🌟 Tu orquestador de entornos seguro
 
@@ -13,7 +13,7 @@ const __dirname = dirname(__filename);
  * y auto-registra las herramientas en la instancia pasada del servidor.
  */
 async function loadTools(server: McpServer): Promise<void> {
-  const toolsPath = join(__dirname, "tools");
+  const toolsPath = resolve(__dirname, "tools");
 
   try {
     const files = await readdir(toolsPath);
@@ -21,24 +21,42 @@ async function loadTools(server: McpServer): Promise<void> {
     for (const file of files) {
       // Solo importamos archivos JS (que son los TS ya compilados en build/)
       if (file.endsWith(".js")) {
-        const toolModule = await import(`./tools/${file}`);
+        try {
+          // Usamos pathToFileURL para evitar problemas con rutas de Windows en import()
+          const filePath = pathToFileURL(join(toolsPath, file)).href;
+          const toolModule = await import(filePath);
+          let countInFile = 0;
 
-        // Buscamos las exportaciones dentro del archivo de la herramienta
-        for (const key in toolModule) {
-          const tool = toolModule[key];
+          // Buscamos las exportaciones dentro del archivo de la herramienta
+          for (const key in toolModule) {
+            const tool = toolModule[key];
 
-          // Verificamos que cumpla estrictamente con el contrato del Onboarding
-          if (tool && tool.name && tool.handler && tool.schema) {
-            server.tool(
-              tool.name,
-              tool.description || "Sin descripción",
-              tool.schema,
-              tool.handler,
-            );
-            console.error(
-              `[Loader] ✅ Herramienta auto-registrada: ${tool.name}`,
-            );
+            // Verificamos que cumpla estrictamente con el contrato del Onboarding
+            if (tool && tool.name && tool.handler && tool.schema) {
+              // The MCP SDK expects a Zod "raw shape" (e.g. { field: z.string() }),
+              // NOT a z.object() wrapper. If the schema has a .shape property,
+              // pass that instead; otherwise pass the schema directly.
+              const rawShape = tool.schema.shape ?? tool.schema;
+
+              server.tool(
+                tool.name,
+                tool.description || "Sin descripción",
+                rawShape,
+                tool.handler,
+              );
+              countInFile++;
+            }
           }
+
+          if (countInFile > 0) {
+            console.error(`[Loader] ✅ Cargadas ${countInFile} herramientas desde ${file}`);
+          }
+        } catch (toolError) {
+          console.error(
+            `[Loader] ⚠️ Error al registrar herramienta desde ${file}:`,
+            toolError,
+          );
+          // Continue loading other tools
         }
       }
     }
@@ -70,6 +88,8 @@ export async function createMcpServer(): Promise<McpServer> {
  * Esto mantendrá la compatibilidad absoluta con mcpjam inspector.
  */
 async function main() {
+  console.error("DEBUG: Entrando a la función main()...");
+
   // Confirmamos que el entorno inyectado esté disponible al arrancar
   if (ENV.ENVIRONMENT === "dev") {
     console.error("🔌 [Server] Modo de desarrollo activo.");
@@ -84,6 +104,18 @@ async function main() {
   console.error("🚀 Servidor base iniciado. Entorno listo para trabajar.");
 }
 
-// Ejecutamos el punto de entrada si este archivo es lanzado directamente por Node
-main();
+// Ejecutamos el punto de entrada SOLO si este archivo es el punto de entrada directo de Node.
+// Esto evita que main() se ejecute cuando server.ts es importado por index.ts (modo HTTP).
+const checkIsMain = () => {
+  if (!process.argv[1]) return false;
+  const scriptPath = resolve(process.argv[1]).toLowerCase();
+  const currentFilePath = resolve(fileURLToPath(import.meta.url)).toLowerCase();
+  
+  return scriptPath === currentFilePath || scriptPath.endsWith('server.js');
+};
 
+if (checkIsMain()) {
+  main().catch(err => {
+    console.error("FATAL: Error en la función main():", err);
+  });
+}

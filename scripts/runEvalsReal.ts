@@ -153,6 +153,8 @@ async function runEvalsReal() {
 
     console.log(`└──────────────────────────────────────────────────`);
     console.log();
+    // Sleep 4 seconds between images to respect Gemini API rate limits
+    await new Promise((resolve) => setTimeout(resolve, 4000));
   }
 
   // ============ SUMMARY ============

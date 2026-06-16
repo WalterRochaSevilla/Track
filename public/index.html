@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FacturaLista — Digitalización de Facturas Bolivianas</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --primary-glow: rgba(99, 102, 241, 0.4);
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.1);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.1);
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.1);
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --font-outfit: 'Outfit', sans-serif;
+      --font-inter: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      font-family: var(--font-inter);
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding: 2rem 1.5rem;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    /* Header Styling */
+    header {
+      text-align: center;
+      margin-bottom: 3rem;
+      position: relative;
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100px;
+      height: 100px;
+      background: var(--primary-glow);
+      filter: blur(50px);
+      z-index: -1;
+    }
+
+    h1 {
+      font-family: var(--font-outfit);
+      font-size: 2.75rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 30%, #a5b4fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.025em;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      font-weight: 400;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* Grid Layout */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    @media (min-width: 1024px) {
+      .grid {
+        grid-template-columns: 420px 1fr;
+      }
+    }
+
+    /* Glassmorphic Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      padding: 1.75rem;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .card-title {
+      font-family: var(--font-outfit);
+      font-size: 1.35rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 0.75rem;
+    }
+
+    /* Dropzone Uploader */
+    .dropzone {
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-md);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--primary);
+      background: rgba(99, 102, 241, 0.05);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
+    }
+
+    .dropzone-icon {
+      font-size: 3rem;
+      color: var(--primary);
+      filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.3));
+    }
+
+    .dropzone-text {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    .dropzone-subtext {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    #file-input {
+      display: none;
+    }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1.5rem;
+      font-family: var(--font-outfit);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px var(--primary-glow);
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.15);
+      box-shadow: none;
+    }
+
+    .btn-success {
+      background: var(--success);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background: #059669;
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+    }
+
+    /* File Preview */
+    .file-preview {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 0.75rem;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .file-preview-icon {
+      font-size: 2rem;
+      color: var(--primary);
+    }
+
+    .file-preview-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-preview-name {
+      font-size: 0.9rem;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-preview-size {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .file-preview-remove {
+      background: none;
+      border: none;
+      color: var(--danger);
+      cursor: pointer;
+      font-size: 1.25rem;
+      padding: 0.25rem;
+    }
+
+    /* Status Items */
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .status-label {
+      color: var(--text-muted);
+    }
+
+    .status-value {
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .badge {
+      padding: 0.25rem 0.6rem;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background: var(--success-bg);
+      color: var(--success);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .badge-warning {
+      background: var(--warning-bg);
+      color: var(--warning);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .badge-danger {
+      background: var(--danger-bg);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .badge-primary {
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--primary);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 0.5rem;
+    }
+
+    .tab {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-outfit);
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      position: relative;
+      transition: var(--transition);
+    }
+
+    .tab:hover {
+      color: var(--text-main);
+    }
+
+    .tab.active {
+      color: var(--primary);
+    }
+
+    .tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -9px;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--primary);
+      box-shadow: 0 0 10px var(--primary);
+    }
+
+    .tab-content {
+      display: none;
+      padding-top: 1rem;
+      flex: 1;
+    }
+
+    .tab-content.active {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* Report Layout */
+    .report-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .report-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .report-section {
+      background: rgba(255, 255, 255, 0.015);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+    }
+
+    .report-section-title {
+      font-family: var(--font-outfit);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .report-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .report-item-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .report-item-value {
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    /* Progress and Confidence bar */
+    .confidence-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+    .confidence-bar {
+      flex: 1;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .confidence-fill {
+      height: 100%;
+      border-radius: 10px;
+    }
+
+    .confidence-text {
+      font-size: 0.75rem;
+      font-weight: 600;
+      min-width: 32px;
+      text-align: right;
+    }
+
+    /* JSON display */
+    pre {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      overflow-x: auto;
+      max-height: 480px;
+      color: #38bdf8;
+    }
+
+    /* Spinner */
+    .spinner-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      padding: 5rem 0;
+    }
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 4px solid rgba(99, 102, 241, 0.1);
+      border-left-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      color: var(--text-muted);
+      padding: 6rem 0;
+      text-align: center;
+    }
+
+    .empty-state-icon {
+      font-size: 4rem;
+      opacity: 0.3;
+    }
+
+    /* Alerts section */
+    .alert-box {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      margin-bottom: 0.75rem;
+      align-items: flex-start;
+      line-height: 1.4;
+    }
+
+    .alert-box-error {
+      background: var(--danger-bg);
+      border: 1px solid rgba(239, 68, 68, 0.15);
+      color: #fca5a5;
+    }
+
+    .alert-box-warning {
+      background: var(--warning-bg);
+      border: 1px solid rgba(245, 158, 11, 0.15);
+      color: #fde047;
+    }
+
+    .alert-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    /* Real Image Selector */
+    .real-images-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .real-image-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem;
+      text-align: center;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .real-image-item:hover {
+      background: rgba(99, 102, 241, 0.1);
+      border-color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>FacturaLista</h1>
+      <p class="subtitle">Digitalización y Validación Contable de Facturas Bolivianas con Inteligencia Artificial Multimodal (Gemini 1.5 Flash)</p>
+    </header>
+
+    <div class="grid">
+      <!-- Left Panel: Uploader & Server Status -->
+      <div style="display: flex; flex-direction: column; gap: 2rem;">
+        
+        <!-- Upload Card -->
+        <div class="card">
+          <div class="card-title">
+            <span>📷 Escanear Factura</span>
+          </div>
+          
+          <div class="dropzone" id="dropzone">
+            <div class="dropzone-icon">📤</div>
+            <div class="dropzone-text">Arrastra una imagen de factura aquí</div>
+            <div class="dropzone-subtext">o haz clic para buscar en tu dispositivo</div>
+            <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp">
+          </div>
+
+          <div id="file-preview-container" style="display: none;">
+            <div class="file-preview">
+              <div class="file-preview-icon">📄</div>
+              <div class="file-preview-info">
+                <div class="file-preview-name" id="preview-filename">factura.jpg</div>
+                <div class="file-preview-size" id="preview-filesize">245 KB</div>
+              </div>
+              <button class="file-preview-remove" id="btn-clear-file">✕</button>
+            </div>
+          </div>
+
+          <button class="btn" id="btn-process" disabled>
+            ⚡ Analizar Factura con Gemini
+          </button>
+        </div>
+
+        <!-- Real dataset quick selector -->
+        <div class="card">
+          <div class="card-title">
+            <span>📁 Dataset Real Boliviano</span>
+          </div>
+          <p class="dropzone-subtext" style="margin-top: -0.5rem;">Haz clic en una factura real provista en la carpeta del dataset para analizarla instantáneamente:</p>
+          
+          <div class="real-images-list" id="real-images-container">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Server Status Card -->
+        <div class="card">
+          <div class="card-title">
+            <span>🔌 Estado del Servidor</span>
+          </div>
+          
+          <div class="status-item">
+            <span class="status-label">Servicio API</span>
+            <span class="status-value">
+              <span class="badge badge-success" id="server-status">CONECTADO</span>
+            </span>
+          </div>
+          
+          <div class="status-item">
+            <span class="status-label">JWT Token (Dev)</span>
+            <span class="status-value">
+              <span class="badge badge-primary" id="token-status">Generando...</span>
+            </span>
+          </div>
+
+          <div class="status-item">
+            <span class="status-label">Empresa ID</span>
+            <span class="status-value" style="font-family: var(--font-mono); font-size: 0.8rem;">
+              empresa-test-01
+            </span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Panel: Results Viewer -->
+      <div class="card" style="min-height: 500px;">
+        <!-- Tabs header -->
+        <div class="tabs">
+          <button class="tab active" data-tab="tab-report">📋 Informe de Análisis</button>
+          <button class="tab" data-tab="tab-alerts">🔍 Validación Fiscal</button>
+          <button class="tab" data-tab="tab-json">💻 Salida Estructurada (JSON)</button>
+        </div>
+
+        <!-- Loading spinner -->
+        <div class="spinner-container" id="loading-spinner" style="display: none;">
+          <div class="spinner"></div>
+          <div style="text-align: center;">
+            <div style="font-weight: 600; margin-bottom: 0.25rem;">Procesando Imagen con Gemini 1.5 Flash...</div>
+            <div class="dropzone-subtext">Digitalizando texto, detectando impuestos y calculando confianzas.</div>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state" id="empty-state">
+          <div class="empty-state-icon">📄</div>
+          <div style="font-weight: 500;">No hay factura procesada aún</div>
+          <div class="dropzone-subtext" style="max-width: 300px;">Sube una imagen de factura desde el panel izquierdo para ver el informe contable.</div>
+        </div>
+
+        <!-- Tab 1: Formatted Report -->
+        <div class="tab-content tab-pane active" id="tab-report" style="display: none;">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid rgba(255,255,255,0.03);">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span style="font-size: 1.25rem;" id="report-badge-icon">✅</span>
+              <div>
+                <div style="font-weight: 600;" id="report-badge-title">FACTURA VÁLIDA</div>
+                <div class="dropzone-subtext" id="report-badge-subtitle">Todos los controles aritméticos y de NIT pasaron</div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Confianza General</div>
+              <div style="font-weight: 700; color: var(--success); font-size: 1.25rem;" id="report-avg-confidence">100%</div>
+            </div>
+          </div>
+
+          <div class="report-grid">
+            <!-- Emisor -->
+            <div class="report-section">
+              <div class="report-section-title">🏢 Emisor</div>
+              <div class="report-item">
+                <span class="report-item-label">Razón Social</span>
+                <span class="report-item-value" id="val-razonSocialEmisor">—</span>
+                <div class="confidence-container">
+                  <div class="confidence-bar"><div class="confidence-fill" id="conf-razonSocialEmisor"></div></div>
+                  <span class="confidence-text" id="txtconf-razonSocialEmisor">0%</span>
+                </div>
+              </div>
+              <div class="report-item">
+                <span class="report-item-label">NIT Emisor</span>
+                <span class="report-item-value" id="val-nitEmisor">—</span>
+                <div class="confidence-container">
+                  <div class="confidence-bar"><div class="confidence-fill" id="conf-nitEmisor"></div></div>
+                  <span class="confidence-text" id="txtconf-nitEmisor">0%</span>
+                </div>
+              </div>
+              <div class="report-item">
+                <span class="report-item-label">Lugar de Emisión</span>
+                <span class="report-item-value" id="val-lugarEmision">—</span>
+              </div>
+              <div class="report-item">
+                <span class="report-item-label">Actividad Económica</span>
+                <span class="report-item-value" id="val-actividadEconomica">—</span>
+              </div>
+            </div>
+
+            <!-- Factura Detalle -->
+            <div class="report-section">
+              <div class="report-section-title">📄 Detalles de Factura</div>
+              <div class="report-item">
+                <span class="report-item-label">Tipo Transacción</span>
+                <span class="report-item-value" id="val-tipo">—</span>
+              </div>
+              <div class="report-item">
+                <span class="report-item-label">Número de Factura</span>
+                <span class="report-item-value" id="val-numeroFactura">—</span>
+                <div class="confidence-container">
+                  <div class="confidence-bar"><div class="confidence-fill" id="conf-numeroFactura"></div></div>
+                  <span class="confidence-text" id="txtconf-numeroFactura">0%</span>
+                </div>
+              </div>
+              <div class="report-item">
+                <span class="report-item-label">Fecha de Emisión</span>
+                <span class="report-item-value" id="val-fechaEmision">—</span>
+                <div class="confidence-container">
+                  <div class="confidence-bar"><div class="confidence-fill" id="conf-fechaEmision"></div></div>
+                  <span class="confidence-text" id="txtconf-fechaEmision">0%</span>
+                </div>
+              </div>
+              <div class="report-item">
+                <span class="report-item-label">Modalidad Facturación</span>
+                <span class="report-item-value" id="val-modalidad">—</span>
+              </div>
+            </div>
+
+            <!-- Comprador -->
+            <div class="report-section">
+              <div class="report-section-title">👤 Comprador</div>
+              <div class="report-item">
+                <span class="report-item-label">NIT / CI Comprador</span>
+                <span class="report-item-value" id="val-nitComprador">—</span>
+                <div class="confidence-container">
+                  <div class="confidence-bar"><div class="confidence-fill" id="conf-nitComprador"></div></div>
+                  <span class="confidence-text" id="txtconf-nitComprador">0%</span>
+                </div>
+              </div>
+              <div class="report-item">
+                <span class="report-item-label">Autorización / CUF</span>
+                <span class="report-item-value" id="val-numeroAutorizacion" style="font-size: 0.8rem; word-break: break-all;">—</span>
+                <div class="confidence-container">
+                  <div class="confidence-bar"><div class="confidence-fill" id="conf-numeroAutorizacion"></div></div>
+                  <span class="confidence-text" id="txtconf-numeroAutorizacion">0%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Importes -->
+            <div class="report-section">
+              <div class="report-section-title">💰 Desglose de Importes (Bs)</div>
+              <div class="report-item">
+                <span class="report-item-label">Importe Total Facturado</span>
+                <span class="report-item-value" id="val-importeTotal">Bs. 0.00</span>
+                <div class="confidence-container">
+                  <div class="confidence-bar"><div class="confidence-fill" id="conf-importeTotal"></div></div>
+                  <span class="confidence-text" id="txtconf-importeTotal">0%</span>
+                </div>
+              </div>
+              <div class="report-item">
+                <span class="report-item-label">Descuentos / Rebajas</span>
+                <span class="report-item-value" id="val-descuentos">Bs. 0.00</span>
+              </div>
+              <div style="border-top: 1px solid rgba(255,255,255,0.05); margin: 0.5rem 0; padding-top: 0.5rem;"></div>
+              <div class="report-item">
+                <span class="report-item-label" style="color: var(--primary);">Base para Crédito Fiscal (IVA 13%)</span>
+                <span class="report-item-value" style="font-weight: 700; color: var(--primary); font-size: 1.1rem;" id="val-importeBaseCreditoFiscal">Bs. 0.00</span>
+              </div>
+              <div class="report-item">
+                <span class="report-item-label">Monto IVA Calculado (13%)</span>
+                <span class="report-item-value" style="font-weight: 600; color: var(--success);" id="val-ivaCalculado">Bs. 0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="report-section" id="report-section-meta" style="margin-top: 1rem;">
+            <div class="report-section-title">📜 Leyenda Fiscal & Información Literal</div>
+            <div class="report-item" style="margin-bottom: 0.75rem;">
+              <span class="report-item-label">Total Literal</span>
+              <span class="report-item-value" id="val-literalTotal" style="font-style: italic;">"—"</span>
+            </div>
+            <div class="report-item">
+              <span class="report-item-label">Leyenda SIN</span>
+              <span class="report-item-value" id="val-leyenda" style="font-size: 0.85rem; line-height: 1.4; color: var(--text-muted);">"—"</span>
+            </div>
+          </div>
+
+          <!-- Action Button to Save/Register -->
+          <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+            <button class="btn btn-success" id="btn-register-invoice">
+              📥 Registrar Factura en el Libro IVA (Base de Datos Drizzle)
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Tab 2: Validation Warnings/Errors -->
+        <div class="tab-content" id="tab-alerts">
+          <div class="report-section-title">🔍 Resultados del Motor de Reglas Fiscales</div>
+          <div id="alerts-container">
+            <!-- Populated via Javascript -->
+          </div>
+        </div>
+
+        <!-- Tab 3: JSON -->
+        <div class="tab-content" id="tab-json">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <div class="report-section-title" style="margin-bottom: 0;">Salida Cruda de la Extracción</div>
+            <button class="btn btn-secondary" style="width: auto; padding: 0.4rem 0.8rem; font-size: 0.8rem;" id="btn-copy-json">📋 Copiar JSON</button>
+          </div>
+          <pre id="json-output">{}</pre>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State management
+    let jwtToken = null;
+    let selectedFile = null;
+    let currentAnalysisResult = null;
+
+    // Elements
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+    const filePreviewContainer = document.getElementById('file-preview-container');
+    const previewFilename = document.getElementById('preview-filename');
+    const previewFilesize = document.getElementById('preview-filesize');
+    const btnClearFile = document.getElementById('btn-clear-file');
+    const btnProcess = document.getElementById('btn-process');
+    const btnRegisterInvoice = document.getElementById('btn-register-invoice');
+    const btnCopyJson = document.getElementById('btn-copy-json');
+    const tokenStatus = document.getElementById('token-status');
+    const realImagesContainer = document.getElementById('real-images-container');
+
+    const loadingSpinner = document.getElementById('loading-spinner');
+    const emptyState = document.getElementById('empty-state');
+    
+    // Tabs
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    // Tab click handler
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.classList.remove('active'));
+        tabContents.forEach(c => c.style.display = 'none');
+        
+        tab.classList.add('active');
+        const contentId = tab.getAttribute('data-tab');
+        document.getElementById(contentId).style.display = 'flex';
+      });
+    });
+
+    // Initialize Auth Token on page load
+    async function initAuth() {
+      try {
+        const response = await fetch('/auth/dev-token');
+        const data = await response.json();
+        if (data.token) {
+          jwtToken = data.token;
+          tokenStatus.textContent = 'ACTIVO';
+          tokenStatus.className = 'badge badge-success';
+        } else {
+          tokenStatus.textContent = 'ERROR';
+          tokenStatus.className = 'badge badge-danger';
+        }
+      } catch (err) {
+        console.error('Error fetching token:', err);
+        tokenStatus.textContent = 'ERROR';
+        tokenStatus.className = 'badge badge-danger';
+      }
+    }
+
+    // Load list of real images from dataset_real
+    const realImageFiles = [
+      "1687452655.webp",
+      "ASIENTO-CONTABLE-DE-UNA-FACTURA-DE-ENERGÍA-ELÉCTRICA-768x1344.png",
+      "R.jpg",
+      "Tigo.webp",
+      "campos factura.webp",
+      "factura-comercial-de-exportacion-bolivia-anexo-8-600x610.jpg",
+      "factura-comercial-de-exportacion-bolivia-anexo-8.jpg",
+      "factura-con-cuf-electronica-bolivia (1).jpg",
+      "factura-con-cuf-electronica-bolivia.jpg",
+      "factura_en_linea.png",
+      "pasted-image-95.png",
+      "verificador-de-facturas-del-SIN-9.png"
+    ];
+
+    function populateRealImages() {
+      realImagesContainer.innerHTML = '';
+      realImageFiles.forEach(file => {
+        const el = document.createElement('div');
+        el.className = 'real-image-item';
+        el.title = file;
+        el.textContent = file.length > 18 ? file.substring(0, 15) + '...' : file;
+        el.addEventListener('click', () => processRealImage(file));
+        realImagesContainer.appendChild(el);
+      });
+    }
+
+    // Process a predefined real image
+    async function processRealImage(filename) {
+      showLoading();
+      try {
+        const response = await fetch('/api/analizar-scan', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwtToken}`
+          },
+          body: JSON.stringify({
+            filePath: `evals/dataset_real/${filename}`
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al analizar la factura.');
+        }
+
+        const data = await response.json();
+        displayResult(data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+        showEmptyState();
+      }
+    }
+
+    // Uploader drag and drop events
+    dropzone.addEventListener('click', () => fileInput.click());
+    
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFileSelect(e.target.files[0]);
+      }
+    });
+
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('dragover');
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      if (e.dataTransfer.files.length > 0) {
+        handleFileSelect(e.dataTransfer.files[0]);
+      }
+    });
+
+    function handleFileSelect(file) {
+      selectedFile = file;
+      previewFilename.textContent = file.name;
+      previewFilesize.textContent = (file.size / 1024).toFixed(1) + ' KB';
+      
+      dropzone.style.display = 'none';
+      filePreviewContainer.style.display = 'block';
+      btnProcess.disabled = false;
+    }
+
+    btnClearFile.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectedFile = null;
+      fileInput.value = '';
+      
+      dropzone.style.display = 'flex';
+      filePreviewContainer.style.display = 'none';
+      btnProcess.disabled = true;
+    });
+
+    // Upload & Process flow
+    btnProcess.addEventListener('click', async () => {
+      if (!selectedFile) return;
+      showLoading();
+
+      try {
+        // Step 1: Upload the file
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+
+        const uploadResponse = await fetch('/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${jwtToken}`
+          },
+          body: formData
+        });
+
+        if (!uploadResponse.ok) {
+          const errData = await uploadResponse.json();
+          throw new Error(errData.error || 'Fallo en la carga del archivo.');
+        }
+
+        const { docId } = await uploadResponse.json();
+
+        // Step 2: Request OCR Analysis and validation
+        const analyzeResponse = await fetch('/api/analizar-scan', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwtToken}`
+          },
+          body: JSON.stringify({ docId })
+        });
+
+        if (!analyzeResponse.ok) {
+          const errData = await analyzeResponse.json();
+          throw new Error(errData.error || 'Fallo en el análisis del documento.');
+        }
+
+        const data = await analyzeResponse.json();
+        displayResult(data);
+
+      } catch (err) {
+        alert('Error: ' + err.message);
+        showEmptyState();
+      }
+    });
+
+    // Register invoice inside the Drizzle DB
+    btnRegisterInvoice.addEventListener('click', async () => {
+      if (!currentAnalysisResult) return;
+      
+      try {
+        const { campos } = currentAnalysisResult.extracted;
+        const body = {
+          empresaId: "empresa-test-01",
+          tipo: campos.tipo,
+          nitEmisor: campos.nitEmisor,
+          razonSocialEmisor: campos.razonSocialEmisor,
+          numeroFactura: campos.numeroFactura,
+          numeroAutorizacion: campos.numeroAutorizacion,
+          fechaEmision: campos.fechaEmision,
+          nitComprador: campos.nitComprador,
+          importeTotal: campos.importeTotal,
+          descuentos: campos.descuentos,
+          importeBaseCreditoFiscal: campos.importeBaseCreditoFiscal
+        };
+
+        const response = await fetch('/api/registrar', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${jwtToken}`
+          },
+          body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || 'Fallo al guardar en BD.');
+        }
+
+        const saveResult = await response.json();
+        alert('🎉 Factura guardada exitosamente en la base de datos!\nID generado: ' + saveResult.id);
+      } catch (err) {
+        alert('❌ Error al guardar en base de datos: ' + err.message);
+      }
+    });
+
+    btnCopyJson.addEventListener('click', () => {
+      const txt = document.getElementById('json-output').textContent;
+      navigator.clipboard.writeText(txt);
+      btnCopyJson.textContent = '¡Copiado!';
+      setTimeout(() => btnCopyJson.textContent = '📋 Copiar JSON', 2000);
+    });
+
+    // Helper states
+    function showLoading() {
+      loadingSpinner.style.display = 'flex';
+      emptyState.style.display = 'none';
+      tabContents.forEach(c => c.style.display = 'none');
+    }
+
+    function showEmptyState() {
+      loadingSpinner.style.display = 'none';
+      emptyState.style.display = 'flex';
+      tabContents.forEach(c => c.style.display = 'none');
+      currentAnalysisResult = null;
+    }
+
+    // Display parsed results in the UI
+    function displayResult(data) {
+      currentAnalysisResult = data;
+      loadingSpinner.style.display = 'none';
+      
+      // Update Tab 1 (Report)
+      const { extracted, validation } = data;
+      const { campos, confianza, metadatos } = extracted;
+
+      // Status header
+      const badgeTitle = document.getElementById('report-badge-title');
+      const badgeSubtitle = document.getElementById('report-badge-subtitle');
+      const badgeIcon = document.getElementById('report-badge-icon');
+      
+      if (validation.valida) {
+        badgeTitle.textContent = 'FACTURA VÁLIDA';
+        badgeSubtitle.textContent = 'Todos los controles aritméticos y de NIT pasaron';
+        badgeIcon.textContent = '✅';
+      } else {
+        badgeTitle.textContent = 'FACTURA CON ERRORES';
+        badgeSubtitle.textContent = `${validation.errores.length} error(es) crítico(s) detectados`;
+        badgeIcon.textContent = '❌';
+      }
+
+      // Average confidence calculation
+      const confValues = Object.values(confianza);
+      const avgConf = confValues.length > 0
+        ? confValues.reduce((a, b) => a + b, 0) / confValues.length
+        : 0;
+      document.getElementById('report-avg-confidence').textContent = Math.round(avgConf * 100) + '%';
+      
+      // Populate text fields
+      document.getElementById('val-razonSocialEmisor').textContent = campos.razonSocialEmisor || '—';
+      document.getElementById('val-nitEmisor').textContent = campos.nitEmisor || '—';
+      document.getElementById('val-lugarEmision').textContent = metadatos.lugarEmision || 'No detectado';
+      document.getElementById('val-actividadEconomica').textContent = metadatos.actividadEconomica || 'No detectada';
+      
+      document.getElementById('val-tipo').textContent = (campos.tipo || '—').toUpperCase();
+      document.getElementById('val-numeroFactura').textContent = campos.numeroFactura || '—';
+      document.getElementById('val-fechaEmision').textContent = campos.fechaEmision || '—';
+      document.getElementById('val-modalidad').textContent = metadatos.modalidadFacturacion || 'Manual/Computarizada';
+      
+      document.getElementById('val-nitComprador').textContent = campos.nitComprador || '—';
+      document.getElementById('val-numeroAutorizacion').textContent = campos.numeroAutorizacion || '—';
+      
+      document.getElementById('val-importeTotal').textContent = 'Bs. ' + Number(campos.importeTotal || 0).toFixed(2);
+      document.getElementById('val-descuentos').textContent = 'Bs. ' + Number(campos.descuentos || 0).toFixed(2);
+      document.getElementById('val-importeBaseCreditoFiscal').textContent = 'Bs. ' + Number(campos.importeBaseCreditoFiscal || 0).toFixed(2);
+      document.getElementById('val-ivaCalculado').textContent = 'Bs. ' + (Number(campos.importeBaseCreditoFiscal || 0) * 0.13).toFixed(2);
+
+      document.getElementById('val-literalTotal').textContent = metadatos.literalTotal ? `"${metadatos.literalTotal}"` : '"—"';
+      document.getElementById('val-leyenda').textContent = metadatos.leyenda ? `"${metadatos.leyenda}"` : '"—"';
+
+      // Populate confidence bars
+      const fields = ['razonSocialEmisor', 'nitEmisor', 'numeroFactura', 'fechaEmision', 'nitComprador', 'numeroAutorizacion', 'importeTotal'];
+      fields.forEach(field => {
+        const val = confianza[field] || 0;
+        const fillEl = document.getElementById(`conf-${field}`);
+        const textEl = document.getElementById(`txtconf-${field}`);
+        
+        fillEl.style.width = (val * 100) + '%';
+        textEl.textContent = Math.round(val * 100) + '%';
+        
+        // Color coding
+        if (val >= 0.9) fillEl.style.backgroundColor = 'var(--success)';
+        else if (val >= 0.7) fillEl.style.backgroundColor = 'var(--warning)';
+        else fillEl.style.backgroundColor = 'var(--danger)';
+      });
+
+      // Update Tab 2 (Alerts)
+      const alertsContainer = document.getElementById('alerts-container');
+      alertsContainer.innerHTML = '';
+
+      if (validation.errores.length === 0 && validation.advertencias.length === 0) {
+        alertsContainer.innerHTML = `
+          <div class="alert-box alert-box-success" style="background: var(--success-bg); border: 1px solid rgba(16,185,129,0.15); color: #a7f3d0; display: flex; align-items: center; gap: 0.75rem;">
+            <span class="alert-icon">✨</span>
+            <div>
+              <div style="font-weight: 600;">Factura completamente válida</div>
+              <div style="font-size: 0.8rem; opacity: 0.8; margin-top: 0.25rem;">Esta factura cumple rigurosamente con todas las normas aritméticas, estructura del NIT y confianza mínima de lectura requerida.</div>
+            </div>
+          </div>
+        `;
+      } else {
+        validation.errores.forEach(err => {
+          const box = document.createElement('div');
+          box.className = 'alert-box alert-box-error';
+          box.innerHTML = `<span class="alert-icon">❌</span><div><strong>Error Crítico:</strong> ${err}</div>`;
+          alertsContainer.appendChild(box);
+        });
+
+        validation.advertencias.forEach(warn => {
+          const box = document.createElement('div');
+          box.className = 'alert-box alert-box-warning';
+          box.innerHTML = `<span class="alert-icon">⚠️</span><div><strong>Advertencia Contable:</strong> ${warn}</div>`;
+          alertsContainer.appendChild(box);
+        });
+      }
+
+      // Update Tab 3 (JSON Output)
+      document.getElementById('json-output').textContent = JSON.stringify(data, null, 2);
+
+      // Show the active tab (Report)
+      tabs.forEach(t => t.classList.remove('active'));
+      tabs[0].classList.add('active');
+      tabContents.forEach(c => c.style.display = 'none');
+      document.getElementById('tab-report').style.display = 'flex';
+    }
+
+    // Startup
+    initAuth();
+    populateRealImages();
+  </script>
+</body>
+</html>

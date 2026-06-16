@@ -2,7 +2,7 @@ import { facturaService } from "../bootstrap/factura.js";
 import {
   GenerarResumenIVAInput,
   generarResumenIVASchema,
-} from "../schemas/generarResumenIVA.shema.js";
+} from "../schemas/generarResumenIVA.schema.js";
 
 const generarResumenIVATool = {
   name: "generarResumenIVA",

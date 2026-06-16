@@ -1,82 +1,59 @@
-# 🚀 MCP Server - Track MCPJam (COCHATECH 2026)
+# 🧾 FacturaLista — Auditoría Inteligente para el SIN Bolivia (MCP)
 
-Este es el repositorio base del servidor MCP (Model Context Protocol) para nuestro proyecto de hackathon. La arquitectura está diseñada para ser modular, descentralizada y evitar conflictos de código (merge conflicts) entre los desarrolladores.
+**FacturaLista** es un ecosistema basado en el protocolo MCP que automatiza la extracción, validación fiscal y gestión contable para PYMEs y contadores en Bolivia, bajo la normativa del Servicio de Impuestos Nacionales (SIN).
 
-## 📋 Requisitos Previos
+## 💡 El Problema
+Las PYMEs bolivianas pierden miles de bolivianos anualmente por errores manuales en la transcripción de facturas y la aceptación de documentos con datos fiscales inválidos (NITs erróneos, errores aritméticos en IVA). El proceso es lento, propenso a errores y costoso.
 
-* Node.js (v18 o superior)
-* NPM (viene incluido con Node)
+## 🚀 Nuestra Solución
+Utilizamos **Inteligencia Artificial (Gemini 2.5 Flash)** combinada con **validación determinista** para ofrecer una herramienta que no solo "lee" facturas, sino que garantiza su validez legal.
 
-## 🛠️ 1. Instalación y Configuración Inicial
-
-Cuando clones este repositorio por primera vez, instala todas las dependencias:
-
-```bash
-git clone https://github.com/WalterRochaSevilla/Track.git
-cd Track
-npm install
-```
-
-
-## 🏗️ 2. Arquitectura del Proyecto (Capas)
-
-Para mantener el código limpio y escalable, no programamos todo en un solo archivo. Dividimos cada funcionalidad (Tool) en tres partes. El archivo `src/index.ts` solo funciona como un orquestador que levanta el servidor.
-
-La lógica real de cada herramienta que construyan debe vivir en estas tres carpetas:
-
-### 📂 `src/schemas/` (¿Qué datos necesitamos?)
-Aquí usamos la librería **Zod** para definir estrictamente **qué parámetros debe pedirle la Inteligencia Artificial al usuario**.
-* *Ejemplo:* Si haces un buscador de farmacias, el schema define que la IA debe pedir obligatoriamente un texto llamado `zona` (ej. "Quillacollo" o "Centro"). Si la IA no tiene ese dato en la conversación, se lo preguntará al usuario antes de ejecutar tu código.
-
-### 📂 `src/services/` (El Backend Puro)
-Aquí va la **lógica de negocio dura**. Este archivo no sabe nada de Inteligencia Artificial ni de MCP. 
-* Es el lugar exclusivo para hacer las consultas SQL (con `pg`), llamadas a APIs externas (con `axios`), cálculos matemáticos o reglas de validación. 
-* Recibe los datos limpios del Schema, hace el trabajo pesado y devuelve un resultado (un string, un objeto o un JSON).
-
-### 📂 `src/tools/` (El Puente)
-Este es el archivo que une todo. Es la interfaz que lee la IA.
-* Define el **Nombre** de la herramienta y una **Descripción** detallada (vital para que la IA entienda *cuándo* debe usarla).
-* Importa el Schema para validar los datos.
-* Ejecuta la función del Service.
-* Retorna el resultado a la IA siempre dentro de un bloque de texto formateado como `[{ type: "text" as const, text: resultado }]`.
+### Flujo de Valor
+1. **Visión:** Extracción precisa de 10+ campos (CUF, NIT, Importes) de facturas físicas o digitales.
+2. **Validación:** Comprobación de integridad mediante algoritmo **Módulo 11** y reglas de la RND 102100000011.
+3. **Deduplicación:** Sistema de Hash SHA-256 para evitar registros duplicados.
+4. **Contabilidad:** Generación automática de resumen de IVA (Débito/Crédito) y exportación a formato LCV (Libro de Compras y Ventas).
 
 ---
 
-## ⚡ 3. Cómo crear una nueva "Tool" (Flujo de Trabajo)
+## 🛠️ Decisiones de Ingeniería
 
-¡No crees los archivos a mano! Tenemos un generador automático que crea toda la vertical de archivos por ti y te deja plantillas con código de ejemplo.
+Para cumplir con los estándares de **COCHATECH 2026**, hemos implementado una arquitectura robusta:
 
-Si necesitas crear una funcionalidad (por ejemplo, para buscar farmacias), ejecuta en tu terminal:
+*   **Multi-tenancy Seguro:** Uso de `AsyncLocalStorage` y JWT para aislar los datos por `empresaId`.
+*   **Resiliencia de API:** Implementación de *Exponential Backoff* para manejar los límites de cuota (429) de Google Gemini.
+*   **Validación Híbrida:** La IA extrae, pero el código valida. El cálculo de IVA y el Módulo 11 del NIT no se delegan a la IA para asegurar precisión contable del 100%.
+*   **Transporte Dual:** Soporta `stdio` para integración con Claude Desktop y `HTTP` para nuestra interfaz web Glassmorphism.
 
-```bash
-npm run generate:tool buscarFarmacia
-```
-
-Esto creará automáticamente tres archivos listos para programar:
-1.  `src/schemas/buscarFarmacia.ts`
-2.  `src/services/buscarFarmacia.ts`
-3.  `src/tools/buscarFarmacia.ts`
-
-### ⚠️ Paso Obligatorio: Registrar la Tool
-Una vez que hayas programado tu lógica, debes decirle al servidor que tu herramienta existe. Ve al archivo `src/index.ts`, importa tu herramienta y añádela al servidor:
-
-```typescript
-import { buscarFarmaciaTool } from "./tools/buscarFarmacia.js";
-
-// Añadir debajo de las otras herramientas:
-server.tool(
-  buscarFarmaciaTool.name,
-  buscarFarmaciaTool.description,
-  buscarFarmaciaTool.schema,
-  buscarFarmaciaTool.handler
-);
-```
+## 📦 Stack Tecnológico
+*   **Lenguaje:** TypeScript / Node.js
+*   **IA:** Gemini 2.5 Flash (Visión & JSON Estructurado)
+*   **ORM:** Drizzle ORM con PostgreSQL
+*   **Protocolo:** Model Context Protocol (MCP) SDK
 
 ---
 
-## 🧪 4. Cómo Probar el Servidor localmente (MCPJam)
+## 🚀 Instalación y Uso
 
-El servidor se prueba obligatoriamente a través del Inspector oficial de MCPJam. Para compilar tu código de TypeScript y levantar el entorno de pruebas, ejecuta:
+1. **Clonar e Instalar:**
+   ```bash
+   git clone https://github.com/WalterRochaSevilla/Track.git
+   npm install
+   ```
+2. **Configurar Entorno:**
+   Crea un archivo `.env` basado en `.env.example` con tu `GEMINI_API_KEY` y `DATABASE_URL`.
+3. **Iniciar Servidor:**
+   ```bash
+   npm run dev
+   ```
+
+## 🧪 Evaluación y Calidad (Evals)
+Contamos con una suite de pruebas para garantizar la precisión:
+*   **Dataset Sintético:** `npm run evals` (6 casos críticos).
+*   **Dataset Real:** `npm run evals:real` (12 facturas reales del SIN).
+
+## 🔍 Evidencia MCPJam
+El servidor está optimizado para el **MCP Inspector**. Para probar las herramientas:
 
 ```bash
 npm run dev:inspector

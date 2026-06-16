@@ -6,7 +6,7 @@ import { RegistrarFactura } from "../use_cases/registrarFactura.js";
 import type { RegistrarFacturaInput } from "../schemas/registrarFactura.schema.js";
 import { createHash } from "node:crypto";
 import { ListarFacturasInput } from "../schemas/listarFacturas.schema.js";
-import { GenerarResumenIVAInput } from "../schemas/generarResumenIVA.shema.js";
+import { GenerarResumenIVAInput } from "../schemas/generarResumenIVA.schema.js";
 import { ExportarLCVInput } from "../schemas/exportarLCV.schema.js";
 export class FacturaService {
   constructor(
