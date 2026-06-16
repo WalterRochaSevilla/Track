@@ -5,7 +5,7 @@ import {
 } from "../schemas/listarFacturas.schema.js";
 
 const listarFacturasTool = {
-  name: "Listar_Facturas",
+  name: "listarFacturas",
   description: "Lista Facturas durante un periodo de tiempo",
   schema: listarFacturasSchema,
   handler: async (input: ListarFacturasInput) => {

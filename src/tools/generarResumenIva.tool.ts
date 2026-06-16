@@ -5,7 +5,7 @@ import {
 } from "../schemas/generarResumenIVA.shema.js";
 
 const generarResumenIVATool = {
-  name: "Generar_Resumen_IVA",
+  name: "generarResumenIVA",
   description: "Generar un Resumen del IVA atravez de un periodo de tiempo",
   schema: generarResumenIVASchema,
   handler: async (input: GenerarResumenIVAInput) => {

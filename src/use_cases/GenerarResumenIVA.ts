@@ -15,10 +15,10 @@ export class GenerarResumenIVA {
       let iva = factura.importeBaseCreditoFiscal * 0.13;
       switch (factura.tipo) {
         case "compra":
-          debito += iva;
+          credito += iva;
           break;
         case "venta":
-          credito += iva;
+          debito += iva;
           break;
         default:
           throw new Error("Tipo de factura invalida");

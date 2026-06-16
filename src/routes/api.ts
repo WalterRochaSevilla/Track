@@ -7,6 +7,7 @@ import { HttpStatusCode } from "axios";
 import { ListarFacturasInput } from "../schemas/listarFacturas.schema.js";
 import { GenerarResumenIVAInput } from "../schemas/generarResumenIVA.shema.js";
 import { ExportarLCVInput } from "../schemas/exportarLCV.schema.js";
+
 export const apiRouter = Router();
 
 // All /api routes require a valid JWT with empresaId
@@ -17,84 +18,84 @@ apiRouter.get("/health", (_req: Request, res: Response) => {
   res.json({ status: "ok", ts: new Date().toISOString() });
 });
 
-apiRouter.post("/registrar", async (_req: Request, res: Response) => {
-  let dto = _req.body as RegistrarFacturaInput;
+apiRouter.post("/registrar", async (req: Request, res: Response) => {
+  const dto = req.body as RegistrarFacturaInput;
   try {
     const response = await facturaService.registrar(dto);
-    res.json(JSON.stringify(response));
-    res.status(HttpStatusCode.Created);
-  } catch (error) {}
+    res.status(HttpStatusCode.Created).json(response);
+  } catch (error: any) {
+    res.status(HttpStatusCode.InternalServerError).json({
+      error: error.message || String(error),
+    });
+  }
 });
 
-apiRouter.get("/facturas", async (_req: Request, res: Response) => {
-  let fechaInicio = _req.query.fechaInicio;
-  let fechaFin = _req.query.fechaFin;
-  if (fechaFin == null || fechaInicio == null) {
-    res.status(HttpStatusCode.BadRequest);
-    res.json({
-      error: "invalid query parameter",
+apiRouter.get("/facturas", async (req: Request, res: Response) => {
+  const { fechaInicio, fechaFin } = req.query;
+  if (!fechaInicio || !fechaFin) {
+    res.status(HttpStatusCode.BadRequest).json({
+      error: "Missing required query parameters: fechaInicio and fechaFin",
     });
+    return;
   }
   try {
     const dto = {
-      empresaId: _req.empresaId,
-      fechaInicio: fechaInicio,
-      fechaFin: fechaFin,
+      empresaId: req.empresaId,
+      fechaInicio: String(fechaInicio),
+      fechaFin: String(fechaFin),
     } as ListarFacturasInput;
     const response = await facturaService.listar(dto);
-    res.json(JSON.stringify(response));
-    res.status(HttpStatusCode.Ok);
-  } catch (error) {
-    res.status(HttpStatusCode.InternalServerError);
-    res.json(JSON.stringify(error));
+    res.status(HttpStatusCode.Ok).json(response);
+  } catch (error: any) {
+    res.status(HttpStatusCode.InternalServerError).json({
+      error: error.message || String(error),
+    });
   }
 });
 
-apiRouter.get("/resumen", async (_req: Request, res: Response) => {
-  let fechaInicio = _req.query.fechaInicio;
-  let fechaFin = _req.query.fechaFin;
-  if (fechaFin == null || fechaInicio == null) {
-    res.status(HttpStatusCode.BadRequest);
-    res.json({
-      error: "invalid query parameter",
+apiRouter.get("/resumen", async (req: Request, res: Response) => {
+  const { fechaInicio, fechaFin } = req.query;
+  if (!fechaInicio || !fechaFin) {
+    res.status(HttpStatusCode.BadRequest).json({
+      error: "Missing required query parameters: fechaInicio and fechaFin",
     });
+    return;
   }
   try {
     const dto = {
-      empresaId: _req.empresaId,
-      fechaInicio: fechaInicio,
-      fechaFin: fechaFin,
+      empresaId: req.empresaId,
+      fechaInicio: String(fechaInicio),
+      fechaFin: String(fechaFin),
     } as GenerarResumenIVAInput;
     const response = await facturaService.resumenIVA(dto);
-    res.json(JSON.stringify(response));
-    res.status(HttpStatusCode.Ok);
-  } catch (error) {
-    res.status(HttpStatusCode.InternalServerError);
-    res.json(JSON.stringify(error));
+    res.status(HttpStatusCode.Ok).json(response);
+  } catch (error: any) {
+    res.status(HttpStatusCode.InternalServerError).json({
+      error: error.message || String(error),
+    });
   }
 });
 
-apiRouter.get("/exportar", async (_req: Request, res: Response) => {
-  let fechaInicio = _req.query.fechaInicio;
-  let fechaFin = _req.query.fechaFin;
-  if (fechaFin == null || fechaInicio == null) {
-    res.status(HttpStatusCode.BadRequest);
-    res.json({
-      error: "invalid query parameter",
+apiRouter.get("/exportar", async (req: Request, res: Response) => {
+  const { fechaInicio, fechaFin } = req.query;
+  if (!fechaInicio || !fechaFin) {
+    res.status(HttpStatusCode.BadRequest).json({
+      error: "Missing required query parameters: fechaInicio and fechaFin",
     });
+    return;
   }
   try {
     const dto = {
-      empresaId: _req.empresaId,
-      fechaInicio: fechaInicio,
-      fechaFin: fechaFin,
+      empresaId: req.empresaId,
+      fechaInicio: String(fechaInicio),
+      fechaFin: String(fechaFin),
     } as ExportarLCVInput;
     const response = await facturaService.exportarLCV(dto);
-    res.json(JSON.stringify(response));
-    res.status(HttpStatusCode.Ok);
-  } catch (error) {
-    res.status(HttpStatusCode.InternalServerError);
-    res.json(JSON.stringify(error));
+    res.status(HttpStatusCode.Ok).json(response);
+  } catch (error: any) {
+    res.status(HttpStatusCode.InternalServerError).json({
+      error: error.message || String(error),
+    });
   }
 });
 

@@ -5,7 +5,7 @@ import {
 } from "../schemas/exportarLCV.schema.js";
 
 const exportarLCVTool = {
-  name: "Exportar_LCV",
+  name: "exportarLCV",
   description: "Exportar las facturas de un periodo determinado en un csv",
   schema: exportarLCVSchema,
   handler: async (input: ExportarLCVInput) => {

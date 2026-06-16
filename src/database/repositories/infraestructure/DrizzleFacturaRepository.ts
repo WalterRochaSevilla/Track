@@ -1,4 +1,3 @@
-import { fa } from "zod/v4/locales";
 import { db } from "../../db.js";
 import { Factura } from "../../entities/Factura.js";
 import { facturaSchema } from "../../schemas/factura.js";
