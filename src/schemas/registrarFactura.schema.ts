@@ -14,7 +14,6 @@ export const registrarFacturaSchema = {
   importeBaseCreditoFiscal: z.number(),
 };
 
-// 🌟 PARA EL TYPE: Envolvemos el objeto plano dentro de z.object para inferir el tipo sin romper la exportación
 export type RegistrarFacturaInput = z.infer<
   z.ZodObject<typeof registrarFacturaSchema>
 >;
