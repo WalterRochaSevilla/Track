@@ -26,8 +26,10 @@ export const ENV = {
   ENVIRONMENT: "${process.env.ENVIRONMENT || "prod"}",
   JWT_SECRET: "${process.env.JWT_SECRET || ""}",
   UPLOAD_DIR: "${process.env.UPLOAD_DIR || ""}",
-  PORT: "${process.env.PORT || 300}"
+  PORT: "${process.env.PORT || 3000}",
+  GEMINI_API_KEY: "${process.env.GEMINI_API_KEY || ""}"
 };
+
 `;
 
 // Aseguramos que exista la carpeta por si acaso

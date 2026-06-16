@@ -1,0 +1,210 @@
+[
+  {
+    "id": "factura_01_valida",
+    "description": "Factura de compra totalmente válida y limpia",
+    "mockOcrResult": {
+      "campos": {
+        "tipo": "compra",
+        "nitEmisor": "102003041",
+        "razonSocialEmisor": "FARMACIA EL SOL S.R.L.",
+        "numeroFactura": "584930",
+        "numeroAutorizacion": "2904001100223",
+        "fechaEmision": "2026-05-15",
+        "nitComprador": "4810293",
+        "importeTotal": 150.50,
+        "descuentos": 0.00,
+        "importeBaseCreditoFiscal": 150.50
+      },
+      "confianza": {
+        "tipo": 0.99,
+        "nitEmisor": 0.98,
+        "razonSocialEmisor": 0.95,
+        "numeroFactura": 0.97,
+        "numeroAutorizacion": 0.96,
+        "fechaEmision": 0.99,
+        "nitComprador": 0.98,
+        "importeTotal": 0.99,
+        "descuentos": 0.95,
+        "importeBaseCreditoFiscal": 0.99
+      }
+    },
+    "expectedValidation": {
+      "valida": true,
+      "erroresCount": 0,
+      "advertenciasCount": 0
+    }
+  },
+  {
+    "id": "factura_02_aritmética_invalida",
+    "description": "Factura con error aritmético (Total - Descuento != Base)",
+    "mockOcrResult": {
+      "campos": {
+        "tipo": "compra",
+        "nitEmisor": "102003041",
+        "razonSocialEmisor": "SUPERMERCADO DIA",
+        "numeroFactura": "112233",
+        "numeroAutorizacion": "38290019283",
+        "fechaEmision": "2026-06-01",
+        "nitComprador": "4810293",
+        "importeTotal": 500.00,
+        "descuentos": 50.00,
+        "importeBaseCreditoFiscal": 500.00
+      },
+      "confianza": {
+        "tipo": 0.99,
+        "nitEmisor": 0.98,
+        "razonSocialEmisor": 0.95,
+        "numeroFactura": 0.97,
+        "numeroAutorizacion": 0.96,
+        "fechaEmision": 0.99,
+        "nitComprador": 0.98,
+        "importeTotal": 0.99,
+        "descuentos": 0.95,
+        "importeBaseCreditoFiscal": 0.99
+      }
+    },
+    "expectedValidation": {
+      "valida": true,
+      "erroresCount": 0,
+      "advertenciasCount": 1
+    }
+  },
+  {
+    "id": "factura_03_nit_invalido_formato",
+    "description": "Factura con NIT de emisor con letras (inválido)",
+    "mockOcrResult": {
+      "campos": {
+        "tipo": "compra",
+        "nitEmisor": "1020ABC45",
+        "razonSocialEmisor": "TIENDA DOÑA MARIA",
+        "numeroFactura": "555",
+        "numeroAutorizacion": "9988776655",
+        "fechaEmision": "2026-04-20",
+        "nitComprador": "4810293",
+        "importeTotal": 75.00,
+        "descuentos": 0.00,
+        "importeBaseCreditoFiscal": 75.00
+      },
+      "confianza": {
+        "tipo": 0.99,
+        "nitEmisor": 0.98,
+        "razonSocialEmisor": 0.95,
+        "numeroFactura": 0.97,
+        "numeroAutorizacion": 0.96,
+        "fechaEmision": 0.99,
+        "nitComprador": 0.98,
+        "importeTotal": 0.99,
+        "descuentos": 0.95,
+        "importeBaseCreditoFiscal": 0.99
+      }
+    },
+    "expectedValidation": {
+      "valida": false,
+      "erroresCount": 1,
+      "advertenciasCount": 0
+    }
+  },
+  {
+    "id": "factura_04_modulo11_advertencia",
+    "description": "Factura con NIT del emisor numérico pero que no pasa el Módulo 11",
+    "mockOcrResult": {
+      "campos": {
+        "tipo": "compra",
+        "nitEmisor": "1234567",
+        "razonSocialEmisor": "LIBRERIA CENTRAL",
+        "numeroFactura": "9812",
+        "numeroAutorizacion": "4433221100",
+        "fechaEmision": "2026-05-18",
+        "nitComprador": "4810293",
+        "importeTotal": 200.00,
+        "descuentos": 0.00,
+        "importeBaseCreditoFiscal": 200.00
+      },
+      "confianza": {
+        "tipo": 0.99,
+        "nitEmisor": 0.98,
+        "razonSocialEmisor": 0.95,
+        "numeroFactura": 0.97,
+        "numeroAutorizacion": 0.96,
+        "fechaEmision": 0.99,
+        "nitComprador": 0.98,
+        "importeTotal": 0.99,
+        "descuentos": 0.95,
+        "importeBaseCreditoFiscal": 0.99
+      }
+    },
+    "expectedValidation": {
+      "valida": true,
+      "erroresCount": 0,
+      "advertenciasCount": 1
+    }
+  },
+  {
+    "id": "factura_05_falta_campo_esencial",
+    "description": "Factura con fecha de emisión faltante",
+    "mockOcrResult": {
+      "campos": {
+        "tipo": "compra",
+        "nitEmisor": "102003041",
+        "razonSocialEmisor": "ESTACION DE SERVICIO",
+        "numeroFactura": "8877",
+        "numeroAutorizacion": "829304123",
+        "nitComprador": "4810293",
+        "importeTotal": 350.00,
+        "descuentos": 0.00,
+        "importeBaseCreditoFiscal": 350.00
+      },
+      "confianza": {
+        "tipo": 0.99,
+        "nitEmisor": 0.98,
+        "razonSocialEmisor": 0.95,
+        "numeroFactura": 0.97,
+        "numeroAutorizacion": 0.96,
+        "nitComprador": 0.98,
+        "importeTotal": 0.99,
+        "descuentos": 0.95,
+        "importeBaseCreditoFiscal": 0.99
+      }
+    },
+    "expectedValidation": {
+      "valida": false,
+      "erroresCount": 1,
+      "advertenciasCount": 0
+    }
+  },
+  {
+    "id": "factura_06_baja_confianza",
+    "description": "Factura con baja confianza en el escaneo de visión",
+    "mockOcrResult": {
+      "campos": {
+        "tipo": "compra",
+        "nitEmisor": "102003041",
+        "razonSocialEmisor": "RESTÓ LA ESQUINA",
+        "numeroFactura": "304",
+        "numeroAutorizacion": "773399220",
+        "fechaEmision": "2026-06-10",
+        "nitComprador": "4810293",
+        "importeTotal": 180.00,
+        "descuentos": 0.00,
+        "importeBaseCreditoFiscal": 180.00
+      },
+      "confianza": {
+        "tipo": 0.99,
+        "nitEmisor": 0.55,
+        "razonSocialEmisor": 0.62,
+        "numeroFactura": 0.97,
+        "numeroAutorizacion": 0.96,
+        "fechaEmision": 0.99,
+        "nitComprador": 0.98,
+        "importeTotal": 0.99,
+        "descuentos": 0.95,
+        "importeBaseCreditoFiscal": 0.99
+      }
+    },
+    "expectedValidation": {
+      "valida": true,
+      "erroresCount": 0,
+      "advertenciasCount": 2
+    }
+  }
+]
