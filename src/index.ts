@@ -1,3 +1,5 @@
+import { config } from "dotenv";
+import { resolve, dirname } from "path"; 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import fs from "fs/promises";
@@ -7,6 +9,10 @@ import { fileURLToPath } from "url";
 // Configuración de rutas para ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const __filename_env = fileURLToPath(import.meta.url);
+const __dirname_env = dirname(__filename_env);
+config({ path: resolve(__dirname_env, "../.env") });
 
 const server = new McpServer({
     name: "Cochatech-Server",
