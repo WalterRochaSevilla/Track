@@ -1,9 +1,9 @@
-import "dotenv/config";
+import { ENV } from "../config/environments.js";
 import axios from "axios";
 import { z } from "zod";
 import type { FacturaExtraida } from "../types/factura.js";
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+const GEMINI_MODEL = ENV.GEMINI_MODEL ?? "gemini-2.5-flash"
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 const PROMPT = `Eres un asistente contable boliviano. Extrae los datos de esta factura.
@@ -52,7 +52,7 @@ const respuestaZod = z.object({
   importeTotal: z.number().optional(),
   descuentos: z.number().optional(),
   importeBaseCreditoFiscal: z.number().optional(),
-  confianza: z.record(z.number()).optional(),
+  confianza: z.record(z.string(), z.number()).optional(),
 });
 
 export async function descargarImagenComoBase64(
@@ -68,7 +68,7 @@ export async function extraerFacturaDesdeImagen(params: {
   imagenBase64: string;
   mimeType: string;
 }): Promise<FacturaExtraida> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = ENV.GEMINI_API_KEY;
   if (!apiKey) throw new Error("Falta GEMINI_API_KEY en el archivo .env");
 
   const body = {
