@@ -28,6 +28,7 @@ apiRouter.get("/health", (_req: Request, res: Response) => {
 
 apiRouter.post("/registrar", async (req: Request, res: Response) => {
   const dto = req.body as RegistrarFacturaInput;
+  dto.empresaId = req.empresaId;
   try {
     const response = await facturaService.registrar(dto);
     res.status(HttpStatusCode.Created).json(response);
