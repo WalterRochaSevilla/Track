@@ -246,7 +246,7 @@ INSTRUCCIONES CRÍTICAS:
             "Content-Type": "application/json",
             "x-goog-api-key": this.apiKey,
           },
-          timeout: 45000
+          timeout: 90000
         });
 
         const textOutput = response.data.candidates?.[0]?.content?.parts?.[0]?.text;

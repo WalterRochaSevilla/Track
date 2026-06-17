@@ -108,10 +108,13 @@ async function main() {
 // Esto evita que main() se ejecute cuando server.ts es importado por index.ts (modo HTTP).
 const checkIsMain = () => {
   if (!process.argv[1]) return false;
-  const scriptPath = resolve(process.argv[1]).toLowerCase();
-  const currentFilePath = resolve(fileURLToPath(import.meta.url)).toLowerCase();
-  
-  return scriptPath === currentFilePath || scriptPath.endsWith('server.js');
+  try {
+    const scriptPath = resolve(process.argv[1]);
+    const currentFilePath = resolve(fileURLToPath(import.meta.url));
+    return scriptPath === currentFilePath;
+  } catch {
+    return false;
+  }
 };
 
 if (checkIsMain()) {
