@@ -64,7 +64,8 @@ export class VisionExtractor {
     }
 
     // 2. Prepare the payload for Gemini API with an expert-level prompt
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`;
+    const model = ENV.GEMINI_MODEL || "gemini-2.5-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
     const prompt = `Eres un sistema experto de OCR contable especializado en facturas del Estado Plurinacional de Bolivia, reguladas por el Servicio de Impuestos Nacionales (SIN) bajo la modalidad de Facturación en Línea (Ley 843 y RND 102100000011).
 
@@ -241,7 +242,10 @@ INSTRUCCIONES CRÍTICAS:
     while (attempts < maxAttempts) {
       try {
         const response = await axios.post(url, payload, {
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": this.apiKey,
+          },
           timeout: 45000
         });
 
