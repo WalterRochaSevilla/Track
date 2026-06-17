@@ -8,6 +8,7 @@ import { tenantStorage } from "./lib/tenant.js";
 import { authMiddleware } from "./middleware/auth.js";
 import { uploadRouter } from "./routes/upload.js";
 import { apiRouter } from "./routes/api.js";
+import { authRouter } from "./routes/auth.js";
 import { createMcpServer } from "./server.js";
 import { ENV } from "./config/environments.js";
 
@@ -64,8 +65,12 @@ if (ENV.ENVIRONMENT === "dev") {
   });
 }
 
+// ── Auth endpoint for frontend login ───────────────────────────────────────
+app.use("/auth", authRouter);
+
 // ── Upload ────────────────────────────────────────────────────────────────────
 app.use("/upload", uploadRouter);
+app.use("/api/upload", uploadRouter);
 
 // ── REST API for frontend (reuses Track B services) ──────────────────────────
 app.use("/api", apiRouter);

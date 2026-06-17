@@ -40,17 +40,35 @@ apiRouter.post("/registrar", async (req: Request, res: Response) => {
 
 apiRouter.get("/facturas", async (req: Request, res: Response) => {
   const { fechaInicio, fechaFin } = req.query;
-  if (!fechaInicio || !fechaFin) {
+
+  const defaultFechaFin = new Date();
+  const defaultFechaInicio = new Date(defaultFechaFin);
+  defaultFechaInicio.setDate(defaultFechaFin.getDate() - 90); // últimos 90 días por defecto
+
+  const parsedFechaInicio = fechaInicio
+    ? new Date(String(fechaInicio))
+    : defaultFechaInicio;
+  const parsedFechaFin = fechaFin ? new Date(String(fechaFin)) : defaultFechaFin;
+
+  if (fechaInicio && Number.isNaN(parsedFechaInicio.getTime())) {
     res.status(HttpStatusCode.BadRequest).json({
-      error: "Missing required query parameters: fechaInicio and fechaFin",
+      error: "Formato inválido para fechaInicio",
     });
     return;
   }
+
+  if (fechaFin && Number.isNaN(parsedFechaFin.getTime())) {
+    res.status(HttpStatusCode.BadRequest).json({
+      error: "Formato inválido para fechaFin",
+    });
+    return;
+  }
+
   try {
     const dto = {
       empresaId: req.empresaId,
-      fechaInicio: String(fechaInicio),
-      fechaFin: String(fechaFin),
+      fechaInicio: parsedFechaInicio.toISOString(),
+      fechaFin: parsedFechaFin.toISOString(),
     } as ListarFacturasInput;
     const response = await facturaService.listar(dto);
     res.status(HttpStatusCode.Ok).json(response);
