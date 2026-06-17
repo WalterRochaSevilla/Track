@@ -9,4 +9,5 @@ export interface IFacturaRepository {
     fechaFin: Date,
   ): Promise<Factura[]>;
   existsByHash(empresaId: string, hash: string): Promise<boolean>;
+  deleteById(empresaId: string, id: string): Promise<void>;
 }

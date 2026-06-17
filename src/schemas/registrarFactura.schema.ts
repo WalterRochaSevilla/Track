@@ -7,7 +7,7 @@ export const registrarFacturaSchema = {
   razonSocialEmisor: z.string(),
   numeroFactura: z.string(),
   numeroAutorizacion: z.string().nullable(),
-  fechaEmision: z.iso.datetime({ offset: true, local: true }),
+  fechaEmision: z.string().datetime(),
   nitComprador: z.string().nullable(),
   importeTotal: z.number(),
   descuentos: z.number(),

@@ -91,4 +91,15 @@ export class DrizzleFacturaRepository implements IFacturaRepository {
       );
     return response.length > 0;
   }
+
+  async deleteById(empresaId: string, id: string): Promise<void> {
+    await this.db
+      .delete(facturaSchema)
+      .where(
+        and(
+          eq(facturaSchema.empresaId, empresaId),
+          eq(facturaSchema.id, id),
+        ),
+      );
+  }
 }

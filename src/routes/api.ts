@@ -30,7 +30,9 @@ apiRouter.post("/registrar", async (req: Request, res: Response) => {
   const dto = req.body as RegistrarFacturaInput;
   dto.empresaId = req.empresaId;
   try {
+    console.log('[API] POST /registrar payload:', JSON.stringify(dto));
     const response = await facturaService.registrar(dto);
+    console.log('[API] /registrar response:', JSON.stringify(response));
     res.status(HttpStatusCode.Created).json(response);
   } catch (error: any) {
     res.status(HttpStatusCode.InternalServerError).json({
@@ -42,14 +44,12 @@ apiRouter.post("/registrar", async (req: Request, res: Response) => {
 apiRouter.get("/facturas", async (req: Request, res: Response) => {
   const { fechaInicio, fechaFin } = req.query;
 
-  const defaultFechaFin = new Date();
-  const defaultFechaInicio = new Date(defaultFechaFin);
-  defaultFechaInicio.setDate(defaultFechaFin.getDate() - 90); // últimos 90 días por defecto
-
+  // By default return all invoices (no 90-day limit). If the client provides
+  // fechaInicio/fechaFin we'll use them, otherwise use a very wide range.
   const parsedFechaInicio = fechaInicio
     ? new Date(String(fechaInicio))
-    : defaultFechaInicio;
-  const parsedFechaFin = fechaFin ? new Date(String(fechaFin)) : defaultFechaFin;
+    : new Date(0); // epoch -> effectively all records
+  const parsedFechaFin = fechaFin ? new Date(String(fechaFin)) : new Date();
 
   if (fechaInicio && Number.isNaN(parsedFechaInicio.getTime())) {
     res.status(HttpStatusCode.BadRequest).json({
@@ -77,6 +77,25 @@ apiRouter.get("/facturas", async (req: Request, res: Response) => {
     res.status(HttpStatusCode.InternalServerError).json({
       error: error.message || String(error),
     });
+  }
+});
+
+// Delete factura by id
+apiRouter.delete('/facturas/:id', async (req: Request, res: Response) => {
+  const id = String(req.params.id);
+  if (!id) {
+    res.status(HttpStatusCode.BadRequest).json({ error: 'Missing factura id' });
+    return;
+  }
+
+  try {
+    console.log('[API] DELETE /facturas request:', { id, empresaId: req.empresaId });
+    await facturaService.delete({ empresaId: req.empresaId!, id });
+    console.log('[API] DELETE /facturas result: success', { id, empresaId: req.empresaId });
+    res.status(HttpStatusCode.Ok).json({ success: true });
+  } catch (error: any) {
+    console.error('[API] DELETE /facturas error:', error);
+    res.status(HttpStatusCode.InternalServerError).json({ error: error.message || String(error) });
   }
 });
 

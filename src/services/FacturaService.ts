@@ -8,6 +8,8 @@ import { createHash } from "node:crypto";
 import { ListarFacturasInput } from "../schemas/listarFacturas.schema.js";
 import { GenerarResumenIVAInput } from "../schemas/generarResumenIVA.schema.js";
 import { ExportarLCVInput } from "../schemas/exportarLCV.schema.js";
+import { db } from "../database/db.js";
+import { DrizzleFacturaRepository } from "../database/repositories/infraestructure/DrizzleFacturaRepository.js";
 
 export class FacturaService {
   constructor(
@@ -35,8 +37,8 @@ export class FacturaService {
   listar(input: ListarFacturasInput) {
     return this.listarFacturasUseCase.execute(
       input.empresaId,
-      new Date(input.fechaInicio),
-      new Date(input.fechaFin),
+      input.fechaInicio ? new Date(input.fechaInicio) : undefined,
+      input.fechaFin ? new Date(input.fechaFin) : undefined,
     );
   }
 
@@ -54,5 +56,12 @@ export class FacturaService {
       new Date(input.fechaInicio),
       new Date(input.fechaFin),
     );
+  }
+  
+  async delete(input: { empresaId: string; id: string }) {
+    // Use repository directly to perform deleteById
+    const repo = new DrizzleFacturaRepository(db);
+    await repo.deleteById(input.empresaId, input.id);
+    return { success: true };
   }
 }
