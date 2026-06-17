@@ -73,7 +73,7 @@ ANALIZA la imagen de la factura adjunta y extrae TODOS los campos con la máxima
 INSTRUCCIONES CRÍTICAS:
 1. TIPO DE FACTURA: Determina si es una factura de COMPRA (gasto recibido por la empresa, la empresa es el comprador) o VENTA (emitida por la empresa, la empresa es el vendedor). Si no se puede determinar con certeza, usa 'compra' como valor por defecto.
 2. NIT: Los NITs bolivianos son numéricos de 7 a 13 dígitos. Extrae cada dígito con cuidado. No confundas 0 con O, 1 con l, 8 con B.
-3. CUF vs CÓDIGO DE CONTROL: Las facturas electrónicas tienen CUF (largo, alfanumérico). Las facturas antiguas tienen Código de Control (formato XX-XX-XX-XX). Diferencia ambos.
+3. CUF / CÓDIGO DE CONTROL (OPCIONAL — NO OBLIGATORIO): Solo las facturas en línea o computarizadas tienen CUF, y solo las computarizadas antiguas tienen Código de Control. Las facturas MANUALES NO tienen ninguno de los dos. Si la factura es manual o no los ves con claridad, devuelve null en esos campos. NUNCA inventes un CUF ni un código de control.
 4. IMPORTES: Usa puntos para miles y coma para decimales en Bolivia (ej: 1.234,50). Sin embargo, devuelve los valores como NÚMEROS sin formato (ej: 1234.50).
 5. FECHA: Extrae en formato YYYY-MM-DD estricto.
 6. Si el NIT del comprador dice "S/N", "Sin Nombre", "0" o está vacío, devuelve "0".
@@ -175,26 +175,32 @@ INSTRUCCIONES CRÍTICAS:
             },
             codigoControl: {
               type: "STRING",
-              description: "Código de control (si existe, formato XX-XX-XX-XX). Null si no aplica."
+              nullable: true,
+              description: "Código de control (solo facturas computarizadas antiguas, formato XX-XX-XX-XX). Null en facturas manuales o si no aplica."
             },
             cuf: {
               type: "STRING",
-              description: "Código Único de Facturación (CUF) si es factura electrónica en línea. Null si no existe."
+              nullable: true,
+              description: "Código Único de Facturación (solo facturas en línea/electrónicas). Null en facturas manuales o si no existe."
             },
             actividadEconomica: {
               type: "STRING",
+              nullable: true,
               description: "Actividad económica del emisor, si está visible. Null si no se ve."
             },
             leyenda: {
               type: "STRING",
+              nullable: true,
               description: "Leyenda fiscal obligatoria de la factura. Null si no se lee."
             },
             lugarEmision: {
               type: "STRING",
+              nullable: true,
               description: "Ciudad o lugar de emisión de la factura. Null si no aparece."
             },
             literalTotal: {
               type: "STRING",
+              nullable: true,
               description: "El importe total expresado en letras (literal). Null si no está visible."
             }
           },
