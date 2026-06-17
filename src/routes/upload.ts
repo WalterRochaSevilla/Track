@@ -35,7 +35,16 @@ export const uploadRouter = Router();
 uploadRouter.post(
   '/',
   authMiddleware,
-  upload.single('file'),
+  (req, res, next) => {
+    upload.single('file')(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ error: `Error de subida: ${err.message}` });
+      } else if (err) {
+        return res.status(400).json({ error: err.message });
+      }
+      next();
+    });
+  },
   async (req: Request, res: Response) => {
     if (!req.file) {
       res.status(400).json({

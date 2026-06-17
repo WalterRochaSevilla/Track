@@ -17,7 +17,8 @@
     "dev:mcp-inspector": "npx -y @mcpjam/inspector@latest node $(pwd)/build/server.js",
     "generate:tool": "node scripts/generateTool.js",
     "evals": "tsx scripts/runEvals.ts",
-    "evals:real": "tsx scripts/runEvalsReal.ts"
+    "evals:real": "tsx scripts/runEvalsReal.ts",
+    "test:mcp": "npm run build && tsx scripts/verifyMcpTools.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.1",

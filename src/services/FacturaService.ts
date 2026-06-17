@@ -8,6 +8,7 @@ import { createHash } from "node:crypto";
 import { ListarFacturasInput } from "../schemas/listarFacturas.schema.js";
 import { GenerarResumenIVAInput } from "../schemas/generarResumenIVA.schema.js";
 import { ExportarLCVInput } from "../schemas/exportarLCV.schema.js";
+
 export class FacturaService {
   constructor(
     private readonly registrarFacturaUseCase: RegistrarFactura,

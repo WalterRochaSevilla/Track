@@ -1,7 +1,7 @@
 import { db } from "../database/db.js";
 import { uploadsSchema } from "../database/schemas/uploads.js";
 import { eq } from "drizzle-orm";
-import { VisionExtractor, FacturaExtraida } from "../services/visionExtractor.js";
+import { VisionExtractor, FacturaExtraida, descargarImagenComoBase64 } from "../services/visionExtractor.js";
 import { validarFactura, FacturaValidationResult } from "../services/validarFactura.js";
 import { analizarFacturaScanSchema } from "../schemas/analizarFacturaScan.schema.js";
 import type { AnalizarFacturaScanInput } from "../schemas/analizarFacturaScan.schema.js";
@@ -176,8 +176,7 @@ const analizarFacturaScanTool = {
   schema: analizarFacturaScanSchema,
   handler: async (input: AnalizarFacturaScanInput) => {
     try {
-      let finalFilePath = "";
-      let finalMimeType = "image/jpeg";
+      let extracted: FacturaExtraida;
       let sourceInfo = "";
 
       if (input.docId) {
@@ -199,11 +198,12 @@ const analizarFacturaScanTool = {
           };
         }
 
-        finalFilePath = records[0].storedPath;
-        finalMimeType = records[0].mimetype;
+        const finalFilePath = records[0].storedPath;
+        const finalMimeType = records[0].mimetype;
         sourceInfo = `Upload docId: ${input.docId} (${records[0].originalName})`;
+        extracted = await visionExtractor.extract(finalFilePath, finalMimeType);
       } else if (input.filePath) {
-        finalFilePath = input.filePath;
+        const finalFilePath = input.filePath;
         sourceInfo = `Archivo local: ${path.basename(finalFilePath)}`;
         const ext = path.extname(finalFilePath).toLowerCase();
         const mimeMap: Record<string, string> = {
@@ -214,21 +214,49 @@ const analizarFacturaScanTool = {
           ".jpg": "image/jpeg",
           ".jpeg": "image/jpeg",
         };
-        finalMimeType = mimeMap[ext] || "image/jpeg";
+        const finalMimeType = mimeMap[ext] || "image/jpeg";
+        extracted = await visionExtractor.extract(finalFilePath, finalMimeType);
+      } else if (input.imagenUrl || input.imagenBase64) {
+        let base64 = input.imagenBase64;
+        let mime = input.mimeType ?? "image/jpeg";
+        if (!base64 && input.imagenUrl) {
+          const downloaded = await descargarImagenComoBase64(input.imagenUrl);
+          base64 = downloaded.data;
+          mime = downloaded.mimeType;
+          sourceInfo = `URL: ${input.imagenUrl}`;
+        } else {
+          sourceInfo = "Base64 payload";
+        }
+        if (!base64) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: "Error: No se pudo codificar o descargar la imagen provista.",
+              },
+            ],
+            isError: true,
+          };
+        }
+        extracted = await visionExtractor.extractFromBase64(base64, mime);
       } else {
         return {
           content: [
             {
               type: "text" as const,
-              text: "Error: Debe proporcionar al menos un 'docId' o un 'filePath' para realizar el análisis.",
+              text: "Error: Debe proporcionar 'docId', 'filePath', 'imagenUrl' o 'imagenBase64' para el análisis.",
             },
           ],
           isError: true,
         };
       }
 
-      // Step 1: Extract via Gemini Vision
-      const extracted = await visionExtractor.extract(finalFilePath, finalMimeType);
+      // Inject tipo or empresaId if provided
+      extracted.campos = {
+        ...extracted.campos,
+        ...(input.tipo ? { tipo: input.tipo } : {}),
+        ...(input.empresaId ? { empresaId: input.empresaId } : {}),
+      };
 
       // Step 2: Run deterministic validation
       const validationResult = validarFactura(extracted.campos, extracted.confianza);

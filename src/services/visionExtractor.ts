@@ -55,6 +55,13 @@ export class VisionExtractor {
     }
 
     const base64Data = fileBuffer.toString("base64");
+    return this.extractFromBase64(base64Data, mimetype);
+  }
+
+  async extractFromBase64(base64Data: string, mimetype: string): Promise<FacturaExtraida> {
+    if (!this.apiKey) {
+      throw new Error("No se puede realizar la extracción: GEMINI_API_KEY no configurado.");
+    }
 
     // 2. Prepare the payload for Gemini API with an expert-level prompt
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${this.apiKey}`;
@@ -278,4 +285,22 @@ INSTRUCCIONES CRÍTICAS:
     }
     throw new Error("Fallo en la llamada a Gemini API: Máximo de reintentos alcanzado por límite de cuota (429).");
   }
+}
+
+const instance = new VisionExtractor();
+
+export async function extraerFacturaDesdeImagen(params: {
+  imagenBase64: string;
+  mimeType: string;
+}): Promise<FacturaExtraida> {
+  return instance.extractFromBase64(params.imagenBase64, params.mimeType);
+}
+
+export async function descargarImagenComoBase64(
+  url: string
+): Promise<{ data: string; mimeType: string }> {
+  const res = await axios.get(url, { responseType: "arraybuffer" });
+  const mimeType = (res.headers["content-type"] as string) ?? "image/jpeg";
+  const data = Buffer.from(res.data).toString("base64");
+  return { data, mimeType };
 }

@@ -1,16 +1,25 @@
-<<<<<<< HEAD
+// src/services/validarFactura.ts
 import { Factura } from "../database/entities/Factura.js";
+import { createHash } from "node:crypto";
+
+/**
+ * Tasa de IVA estándar en Bolivia (13%)
+ */
+export const IVA_RATE = 0.13;
+const TOLERANCIA = 0.05; // Bs de tolerancia por redondeo
 
 export interface FacturaValidationResult {
   valida: boolean;
   errores: string[];
   advertencias: string[];
+  hashDedup?: string;
+  creditoFiscal?: number;
 }
 
 /**
  * Calculates checking digit using Modulo 11 for Bolivian NIT numbers.
  */
-function calcularDigitoVerificadorMod11(nitSinDV: string): number {
+export function calcularDigitoVerificadorMod11(nitSinDV: string): number {
   let suma = 0;
   let peso = 2;
   const longitud = nitSinDV.length;
@@ -32,19 +41,70 @@ function calcularDigitoVerificadorMod11(nitSinDV: string): number {
   return dvCalculado;
 }
 
+/**
+ * Valida si un NIT tiene el formato numérico y longitud correctos.
+ */
+export function validarNit(nit: string | number): boolean {
+  const nitLimpio = String(nit).replace(/[\.\-\s]/g, "");
+  return /^\d+$/.test(nitLimpio) && nitLimpio.length >= 5 && nitLimpio.length <= 15;
+}
+
+/**
+ * Genera un hash único para la deduplicación de facturas (Track B).
+ */
+export function calcularHashDedup(factura: Partial<Factura>): string {
+  const nit = factura.nitEmisor || "";
+  const nro = factura.numeroFactura || "";
+  const fecha = factura.fechaEmision || "";
+  const total = Number(factura.importeTotal || 0).toFixed(2);
+  const clave = `${nit}|${nro}|${fecha}|${total}`;
+  return createHash("sha256").update(clave).digest("hex");
+}
+
+export function validarFecha(
+  fecha: string,
+  periodo?: string
+): { ok: boolean; motivo?: string } {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    return { ok: false, motivo: `El formato de la fecha '${fecha}' es inválido (se requiere YYYY-MM-DD).` };
+  }
+  const parsedDate = Date.parse(fecha);
+  if (isNaN(parsedDate)) {
+    return { ok: false, motivo: `La fecha '${fecha}' no es válida.` };
+  }
+  const d = new Date(fecha + "T00:00:00");
+  if (d.getTime() > Date.now()) {
+    return { ok: false, motivo: "La fecha de emisión no puede ser futura." };
+  }
+  if (periodo && fecha.slice(0, 7) !== periodo) {
+    return { ok: false, motivo: `La fecha '${fecha}' no pertenece al período fiscal ${periodo}.` };
+  }
+  return { ok: true };
+}
+
 export function validarFactura(
   factura: Partial<Factura>,
-  confianzas?: Record<string, number>
+  confianzasOrPeriodo?: Record<string, number> | string
 ): FacturaValidationResult {
   const errores: string[] = [];
   const advertencias: string[] = [];
 
+  // 1. Extraemos periodo o confianzas
+  let period: string | undefined = undefined;
+  let confianzas: Record<string, number> | undefined = undefined;
+
+  if (typeof confianzasOrPeriodo === "string") {
+    period = confianzasOrPeriodo;
+  } else if (confianzasOrPeriodo && typeof confianzasOrPeriodo === "object") {
+    confianzas = confianzasOrPeriodo;
+  }
+
+  // 2. Validación de campos obligatorios
   const camposRequeridos: Array<keyof Factura> = [
     "nitEmisor",
     "razonSocialEmisor",
     "numeroFactura",
     "fechaEmision",
-    "nitComprador",
     "importeTotal",
     "descuentos",
     "importeBaseCreditoFiscal"
@@ -56,69 +116,76 @@ export function validarFactura(
     }
   }
 
+  // Si faltan campos requeridos básicos, retornamos temprano
   if (errores.length > 0) {
-    return { valida: false, errores, advertencias };
+    return {
+      valida: false,
+      errores,
+      advertencias,
+      hashDedup: calcularHashDedup(factura),
+      creditoFiscal: Math.round(Number(factura.importeBaseCreditoFiscal || 0) * IVA_RATE * 100) / 100
+    };
   }
 
-  const nitEmisorLimpio = String(factura.nitEmisor).replace(/[\.\-\s]/g, "");
-  const esNumericoEmisor = /^\d+$/.test(nitEmisorLimpio);
-  const longitudValidaEmisor = nitEmisorLimpio.length >= 7 && nitEmisorLimpio.length <= 12;
-
-  if (!esNumericoEmisor) {
-    errores.push("El NIT del emisor debe contener únicamente números.");
-  } else if (!longitudValidaEmisor) {
-    errores.push(`El NIT del emisor tiene una longitud inválida (${nitEmisorLimpio.length} dígitos). Debe tener entre 7 y 12 dígitos.`);
-  } else {
-    const baseNit = nitEmisorLimpio.slice(0, -1);
-    const dvOriginal = parseInt(nitEmisorLimpio.slice(-1), 10);
-    const dvCalculado = calcularDigitoVerificadorMod11(baseNit);
-
-    if (dvOriginal !== dvCalculado) {
-      advertencias.push(
-        `El NIT del emisor (${factura.nitEmisor}) no pasó la verificación matemática del algoritmo Módulo 11 (dígito original: ${dvOriginal}, calculado: ${dvCalculado}). Verifique si es correcto.`
-      );
-    }
-  }
-
-  if (factura.nitComprador) {
-    const nitCompradorLimpio = String(factura.nitComprador).replace(/[\.\-\s]/g, "");
-    const esNumericoComprador = /^\d+$/.test(nitCompradorLimpio);
-    if (!esNumericoComprador && nitCompradorLimpio.toUpperCase() !== "0") {
-      errores.push("El NIT del comprador debe contener únicamente números (o ser '0').");
-    }
-  }
-
+  // 3. Montos no negativos
   const total = Number(factura.importeTotal);
   const desc = Number(factura.descuentos || 0);
   const base = Number(factura.importeBaseCreditoFiscal);
 
-  if (isNaN(total) || isNaN(desc) || isNaN(base)) {
-    errores.push("Los montos de importeTotal, descuentos e importeBaseCreditoFiscal deben ser numéricos.");
-  } else {
-    const baseEsperada = total - desc;
-    const diferencia = Math.abs(base - baseEsperada);
+  if (isNaN(total) || total < 0) errores.push("importeTotal no puede ser negativo o inválido.");
+  if (isNaN(desc) || desc < 0) errores.push("descuentos no puede ser negativo o inválido.");
+  if (isNaN(base) || base < 0) errores.push("importeBaseCreditoFiscal no puede ser negativo o inválido.");
 
-    if (base > total) {
-      errores.push(`El importeBaseCreditoFiscal (${base}) no puede ser mayor que el importeTotal (${total}).`);
-    } else if (diferencia > 0.1) {
-      advertencias.push(
-        `Diferencia aritmética detectada: Total (${total}) - Descuentos (${desc}) = ${baseEsperada.toFixed(2)}, pero el importeBaseCreditoFiscal registrado es ${base}.`
-      );
-    }
+  // Coherencia de montos
+  if (desc > total) {
+    errores.push("descuentos no puede superar importeTotal");
+  }
+  if (base - total > TOLERANCIA) {
+    errores.push("importeBaseCreditoFiscal no puede superar importeTotal");
   }
 
-  if (factura.fechaEmision) {
-    const regexFecha = /^\d{4}-\d{2}-\d{2}$/;
-    if (!regexFecha.test(factura.fechaEmision)) {
-      errores.push(`El formato de la fecha de emisión '${factura.fechaEmision}' es inválido (se requiere YYYY-MM-DD).`);
-    } else {
-      const parsedDate = Date.parse(factura.fechaEmision);
-      if (isNaN(parsedDate)) {
-        errores.push(`La fecha de emisión '${factura.fechaEmision}' no es una fecha válida.`);
+  const baseEsperada = total - desc;
+  const diferencia = Math.abs(base - baseEsperada);
+  if (diferencia > TOLERANCIA) {
+    advertencias.push(
+      `Diferencia aritmética detectada: Total (${total}) - Descuentos (${desc}) = ${baseEsperada.toFixed(2)}, pero el importeBaseCreditoFiscal registrado es ${base}.`
+    );
+  }
+
+  // 4. NIT Emisor (formato y dígito verificador)
+  if (!validarNit(factura.nitEmisor!)) {
+    errores.push(`NIT del emisor inválido: ${factura.nitEmisor}`);
+  } else {
+    const nitEmisorLimpio = String(factura.nitEmisor).replace(/[\.\-\s]/g, "");
+    if (nitEmisorLimpio.length >= 7 && nitEmisorLimpio.length <= 12) {
+      const baseNit = nitEmisorLimpio.slice(0, -1);
+      const dvOriginal = parseInt(nitEmisorLimpio.slice(-1), 10);
+      const dvCalculado = calcularDigitoVerificadorMod11(baseNit);
+
+      if (dvOriginal !== dvCalculado) {
+        advertencias.push(
+          `El NIT del emisor (${factura.nitEmisor}) no pasó la verificación matemática del algoritmo Módulo 11 (dígito original: ${dvOriginal}, calculado: ${dvCalculado}).`
+        );
       }
     }
   }
 
+  // NIT Comprador
+  if (factura.nitComprador) {
+    if (!validarNit(factura.nitComprador)) {
+      advertencias.push(`NIT del comprador con formato dudoso: ${factura.nitComprador}`);
+    }
+  }
+
+  // 5. Fecha de emisión
+  if (factura.fechaEmision) {
+    const checkFecha = validarFecha(factura.fechaEmision, period);
+    if (!checkFecha.ok) {
+      errores.push(checkFecha.motivo!);
+    }
+  }
+
+  // 6. Confianzas de visión
   if (confianzas) {
     for (const [campo, nivelConfianza] of Object.entries(confianzas)) {
       if (nivelConfianza < 0.7) {
@@ -128,89 +195,12 @@ export function validarFactura(
       }
     }
   }
-=======
-import { createHash } from "node:crypto";
-import type { Factura, ResultadoValidacion } from "../types/factura.js";
-
-export const IVA_RATE = 0.13;
-const TOLERANCIA = 0.05; // Bs de tolerancia por redondeo
-
-function redondear(n: number): number {
-  return Math.round(n * 100) / 100;
-}
-
-export function calcularCreditoFiscal(base: number): number {
-  return redondear(base * IVA_RATE);
-}
-
-export function calcularHashDedup(f: Factura): string {
-  const clave = `${f.nitEmisor}|${f.numeroFactura}|${f.fechaEmision}|${f.importeTotal}`;
-  return createHash("sha256").update(clave).digest("hex");
-}
-
-export function validarNit(nit: string): boolean {
-  // Validación de formato: solo dígitos, longitud razonable.
-  // El dígito verificador oficial del NIT debe confirmarse con el SIN antes
-  // de activarlo; un algoritmo equivocado rechazaría NITs válidos.
-  return /^\d{5,15}$/.test(nit);
-}
-
-export function validarFecha(
-  fecha: string,
-  periodo?: string
-): { ok: boolean; motivo?: string } {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
-    return { ok: false, motivo: "Formato de fecha inválido (se espera YYYY-MM-DD)" };
-  }
-  const d = new Date(fecha + "T00:00:00");
-  if (Number.isNaN(d.getTime())) return { ok: false, motivo: "Fecha inexistente" };
-  if (d.getTime() > Date.now()) return { ok: false, motivo: "La fecha es futura" };
-  if (periodo && fecha.slice(0, 7) !== periodo) {
-    return { ok: false, motivo: `La fecha no pertenece al período ${periodo}` };
-  }
-  return { ok: true };
-}
-
-export function validarFactura(f: Factura, periodo?: string): ResultadoValidacion {
-  const errores: string[] = [];
-  const advertencias: string[] = [];
-
-  // Montos no negativos
-  if (f.importeTotal < 0) errores.push("importeTotal no puede ser negativo");
-  if (f.descuentos < 0) errores.push("descuentos no puede ser negativo");
-  if (f.importeBaseCreditoFiscal < 0) errores.push("importeBaseCreditoFiscal no puede ser negativo");
-
-  // Coherencia de montos
-  if (f.descuentos > f.importeTotal) errores.push("descuentos no puede superar importeTotal");
-  if (f.importeBaseCreditoFiscal - f.importeTotal > TOLERANCIA) {
-    errores.push("importeBaseCreditoFiscal no puede superar importeTotal");
-  }
-
-  // NIT
-  if (!validarNit(f.nitEmisor)) errores.push(`NIT del emisor inválido: ${f.nitEmisor}`);
-  if (!validarNit(f.nitComprador)) advertencias.push(`NIT del comprador con formato dudoso: ${f.nitComprador}`);
-
-  // Fecha
-  const fecha = validarFecha(f.fechaEmision, periodo);
-  if (!fecha.ok) errores.push(fecha.motivo!);
-
-  // Campos obligatorios / recomendados
-  if (!f.numeroFactura?.trim()) errores.push("Falta el número de factura");
-  if (!f.razonSocialEmisor?.trim()) advertencias.push("Falta la razón social del emisor");
-  if (!f.numeroAutorizacion?.trim()) advertencias.push("Falta el número de autorización / CUF");
->>>>>>> origin/vision_and_validation_invoice
 
   return {
     valida: errores.length === 0,
     errores,
-<<<<<<< HEAD
-    advertencias
-  };
-}
-=======
     advertencias,
-    hashDedup: calcularHashDedup(f),
-    creditoFiscal: calcularCreditoFiscal(f.importeBaseCreditoFiscal),
+    hashDedup: calcularHashDedup(factura),
+    creditoFiscal: Math.round(base * IVA_RATE * 100) / 100
   };
 }
->>>>>>> origin/vision_and_validation_invoice

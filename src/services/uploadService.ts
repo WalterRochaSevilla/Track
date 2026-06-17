@@ -1,13 +1,7 @@
 // src/services/uploadService.ts
-import pg from 'pg';
 import { v4 as uuidv4 } from 'uuid';
-
-const { Pool } = pg;
-
-// Singleton pool for this service. Uses DATABASE_URL from environment.
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+import { db } from "../database/db.js";
+import { uploadsSchema } from "../database/schemas/uploads.js";
 
 export interface UploadRecord {
   empresaId: string;
@@ -23,11 +17,14 @@ export interface UploadRecord {
 export async function saveUpload(record: UploadRecord): Promise<string> {
   const docId = uuidv4();
 
-  await pool.query(
-    `INSERT INTO uploads (doc_id, empresa_id, original_name, stored_path, mimetype, created_at)
-     VALUES ($1, $2, $3, $4, $5, NOW())`,
-    [docId, record.empresaId, record.originalName, record.storedPath, record.mimetype]
-  );
+  await db.insert(uploadsSchema).values({
+    docId,
+    empresaId: record.empresaId,
+    originalName: record.originalName,
+    storedPath: record.storedPath,
+    mimetype: record.mimetype,
+    createdAt: new Date(),
+  });
 
   return docId;
 }
