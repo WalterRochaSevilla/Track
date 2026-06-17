@@ -18,7 +18,8 @@
     "generate:tool": "node scripts/generateTool.js",
     "evals": "tsx scripts/runEvals.ts",
     "evals:real": "tsx scripts/runEvalsReal.ts",
-    "test:mcp": "npm run build && tsx scripts/verifyMcpTools.ts"
+    "test:mcp": "npm run build && tsx scripts/verifyMcpTools.ts",
+    "test": "npm run build && node --test \"build/services/validarFactura.test.js\""
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.1",
